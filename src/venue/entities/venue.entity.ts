@@ -14,7 +14,7 @@ import { Booking } from '@/booking/booking.entity';
 import { MediaItem } from '@/media/media.entity';
 import { Review } from '@/review/review.entity';
 import { VenueType } from '@/shared/enums/venue-type.enum';
-import {VenueAddressInterface} from "@/shared/interfaces/venue-address.interface";
+import {AddressInterface} from "@/shared/interfaces/address.interface";
 import {VenueCapacityInterface} from "@/shared/interfaces/venue-capacity.interface";
 import {PriceInterface} from "@/shared/interfaces/price.interface";
 import {AutoMap} from "@automapper/classes";
@@ -47,7 +47,7 @@ export class Venue {
 
   @Column({type: 'jsonb'})
   @AutoMap()
-  address: VenueAddressInterface;
+  address: AddressInterface;
 
   @Column({ type: 'jsonb' })
   @AutoMap()

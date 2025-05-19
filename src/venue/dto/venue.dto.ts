@@ -13,7 +13,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { VenueType } from '@/shared/enums/venue-type.enum';
-import { VenueAddressInterface } from '@/shared/interfaces/venue-address.interface';
+import { AddressInterface } from '@/shared/interfaces/address.interface';
 import { VenueCapacityInterface } from '@/shared/interfaces/venue-capacity.interface';
 import { PriceInterface } from '@/shared/interfaces/price.interface';
 import { UserDto } from '@/user/dto/user.dto';
@@ -45,7 +45,7 @@ export class VenueDto {
 
   @AutoMap()
   @IsObject()
-  address: VenueAddressInterface;
+  address: AddressInterface;
 
   @AutoMap()
   @IsObject()

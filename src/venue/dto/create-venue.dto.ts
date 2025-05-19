@@ -2,11 +2,11 @@
 import { Type } from 'class-transformer';
 import { PriceType } from '../../shared/enums/price-type.enum';
 import { VenueType } from '@/shared/enums/venue-type.enum';
-import { VenueAddressInterface } from '../../shared/interfaces/venue-address.interface';
+import { AddressInterface } from '../../shared/interfaces/address.interface';
 import { VenueCapacityInterface } from '../../shared/interfaces/venue-capacity.interface';
 import { PriceInterface } from '@/shared/interfaces/price.interface';
 
-class AddressDto implements VenueAddressInterface {
+class AddressDto implements AddressInterface {
   @IsString()
   street: string;
 

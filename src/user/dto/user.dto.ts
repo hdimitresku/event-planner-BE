@@ -1,42 +1,66 @@
-import { Exclude, Expose } from 'class-transformer';
-import { UserRole } from '../entities/user.entity';
-import {AutoMap} from "@automapper/classes";
+import { AutoMap } from '@automapper/classes';
+import { VenueDto } from '@/venue/dto/venue.dto'; // Adjust path
+import { ServiceDto } from '@/service/dto/service.dto'; // Adjust path
+import { BookingDto } from '@/booking/dto/booking.dto'; // Adjust path
+import { ReviewDto } from '@/review/dto/review.dto'; // Adjust path
+import { MessageDto } from '@/message/dto/message.dto';
+import {UserRole} from "@/user/entities/user.entity";
+import {AddressInterface} from "@/shared/interfaces/address.interface";
+import {IsObject} from "class-validator"; // Adjust path
 
-@Exclude()
 export class UserDto {
-  @Expose()
   @AutoMap()
   id: string;
 
-  @Expose()
   @AutoMap()
   email: string;
 
-  @Expose()
   @AutoMap()
   firstName: string;
 
-  @Expose()
   @AutoMap()
   lastName: string;
 
-  @Expose()
   @AutoMap()
-  phoneNumber: string;
+  phoneNumber?: string;
 
-  @Expose()
+  @AutoMap()
+  birthday?: Date;
+
+  @AutoMap()
+  profilePicture?: string;
+
   @AutoMap()
   role: UserRole;
 
-  @Expose()
+  @AutoMap()
+  @IsObject()
+  address?: AddressInterface;
+
+  @AutoMap(() => [MessageDto])
+  sentMessages?: MessageDto[];
+
+  @AutoMap(() => [MessageDto])
+  receivedMessages?: MessageDto[];
+
+  @AutoMap(() => [VenueDto])
+  venues?: VenueDto[];
+
+  @AutoMap(() => [ServiceDto])
+  services?: ServiceDto[];
+
+  @AutoMap(() => [ReviewDto])
+  reviews?: ReviewDto[];
+
+  @AutoMap(() => [BookingDto])
+  bookings?: BookingDto[];
+
+  @AutoMap()
+  metadata?: Record<string, any>;
+
   @AutoMap()
   createdAt: Date;
 
-  @Expose()
   @AutoMap()
   updatedAt: Date;
-
-  constructor(partial: Partial<UserDto>) {
-    Object.assign(this, partial);
-  }
-} 
+}

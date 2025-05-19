@@ -1,85 +1,96 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
-import { Venue } from '@/venue/entities/venue.entity';
-import { Service } from '@/service/entities/service.entity';
-import { Booking } from '@/booking/booking.entity';
-import { Media } from '@/media/entities/media.entity';
+import {Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany, OneToOne} from 'typeorm';
+import {Venue} from '@/venue/entities/venue.entity';
+import {Service} from '@/service/entities/service.entity';
+import {Booking} from '@/booking/booking.entity';
 import {Review} from "@/review/review.entity";
-import { Message } from '@/message/entities/message.entity';
+import {Message} from '@/message/entities/message.entity';
 import {AutoMap} from "@automapper/classes";
-import {MediaItem} from "@/media/media.entity";
+import {AddressInterface} from "@/shared/interfaces/address.interface";
 
 export enum UserRole {
-  USER = 'user',
-  HOST = 'host',
-  ADMIN = 'admin'
+    USER = 'user',
+    HOST = 'host',
+    ADMIN = 'admin'
 }
 
 @Entity('users')
 export class User {
-  @PrimaryGeneratedColumn('uuid')
-  @AutoMap()
-  id: string;
+    @PrimaryGeneratedColumn('uuid')
+    @AutoMap()
+    id: string;
 
-  @Column({ unique: true })
-  @AutoMap()
-  email: string;
+    @Column({unique: true})
+    @AutoMap()
+    email: string;
 
-  @Column()
-  password: string;
+    @Column()
+    password: string;
 
-  @Column()
-  @AutoMap()
-  firstName: string;
+    @Column()
+    @AutoMap()
+    firstName: string;
 
-  @Column()
-  @AutoMap()
-  lastName: string;
+    @Column()
+    @AutoMap()
+    lastName: string;
 
-  @Column({ nullable: true })
-  @AutoMap()
-  phoneNumber: string;
+    @Column({nullable: true})
+    @AutoMap()
+    phoneNumber: string;
 
-  @Column({
-    type: 'enum',
-    enum: UserRole,
-    default: UserRole.USER
-  })
-  @AutoMap()
-  role: UserRole;
+    @Column({nullable: true})
+    @AutoMap()
+    birthday: Date;
 
-  @OneToMany(() => Message, message => message.sender)
-  @AutoMap()
-  sentMessages: Message[];
+    @Column({nullable: true})
+    @AutoMap()
+    profilePicture: string;
 
-  @OneToMany(() => Message, message => message.receiver)
-  @AutoMap()
-  receivedMessages: Message[];
+    @Column({type: "jsonb", nullable: true})
+    @AutoMap()
+    address: AddressInterface;
 
-  @OneToMany(() => Venue, venue => venue.owner)
-  @AutoMap()
-  venues: Venue[];
+    @Column({
+        type: 'enum',
+        enum: UserRole,
+        default: UserRole.USER
+    })
+    @AutoMap()
+    role: UserRole;
 
-  @OneToMany(() => Service, service => service.provider)
-  @AutoMap()
-  services: Service[];
+    @OneToMany(() => Message, message => message.sender)
+    @AutoMap()
+    sentMessages: Message[];
 
-  @OneToMany(() => Review, review => review.user)
-  @AutoMap()
-  reviews: Review[];
+    @OneToMany(() => Message, message => message.receiver)
+    @AutoMap()
+    receivedMessages: Message[];
 
-  @OneToMany(() => Booking, booking => booking.user)
-  @AutoMap()
-  bookings: Booking[];
+    @OneToMany(() => Venue, venue => venue.owner)
+    @AutoMap()
+    venues: Venue[];
 
-  @Column({ type: 'jsonb', nullable: true })
-  @AutoMap()
-  metadata: Record<string, any>;
+    @OneToMany(() => Service, service => service.provider)
+    @AutoMap()
+    services: Service[];
 
-  @CreateDateColumn()
-  @AutoMap()
-  createdAt: Date;
+    @OneToMany(() => Review, review => review.user)
+    @AutoMap()
+    reviews: Review[];
 
-  @UpdateDateColumn()
-  @AutoMap()
-  updatedAt: Date;
+    @OneToMany(() => Booking, booking => booking.user)
+    @AutoMap()
+    bookings: Booking[];
+
+    @Column({type: 'jsonb', nullable: true})
+    @AutoMap()
+    metadata: Record<string, any>;
+
+    @CreateDateColumn()
+    @AutoMap()
+    createdAt: Date;
+
+    @UpdateDateColumn()
+    @AutoMap()
+    updatedAt: Date;
 }  
