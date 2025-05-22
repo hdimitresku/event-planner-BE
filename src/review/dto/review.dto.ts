@@ -1,37 +1,42 @@
-import { Exclude, Expose } from 'class-transformer';
-import { UserDto } from '../../user/dto/user.dto';
-import { Venue } from '../../venue/entities/venue.entity';
+import { AutoMap } from '@automapper/classes';
+import { IsString, IsInt, Min, Max, IsArray, IsBoolean, IsOptional } from 'class-validator';
+import { UserDto } from '@/user/dto/user.dto';
+import { VenueDto } from '@/venue/dto/venue.dto';
 
-@Exclude()
 export class ReviewDto {
-  @Expose()
+  @AutoMap()
+  @IsString()
   id: string;
 
-  @Expose()
+  @AutoMap(() => UserDto)
   user: UserDto;
 
-  @Expose()
-  venue: Venue;
+  @AutoMap(() => VenueDto)
+  venue: VenueDto;
 
-  @Expose()
+  @AutoMap()
+  @IsInt()
+  @Min(1)
+  @Max(5)
   rating: number;
 
-  @Expose()
+  @AutoMap()
+  @IsString()
   comment: string;
 
-  @Expose()
-  photos: string[];
+  @AutoMap()
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  photos?: string[];
 
-  @Expose()
+  @AutoMap()
+  @IsBoolean()
   isVerified: boolean;
 
-  @Expose()
+  @AutoMap()
   createdAt: Date;
 
-  @Expose()
+  @AutoMap()
   updatedAt: Date;
-
-  constructor(partial: Partial<ReviewDto>) {
-    Object.assign(this, partial);
-  }
-} 
+}

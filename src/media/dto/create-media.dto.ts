@@ -1,5 +1,5 @@
 import { IsEnum, IsNotEmpty, IsObject, IsString, IsUUID } from 'class-validator';
-import { MediaType, MediaEntityType } from '../media.entity';
+import { MediaType, MediaEntityType } from '../entities/media.entity';
 
 export class CreateMediaDto {
   @IsNotEmpty()

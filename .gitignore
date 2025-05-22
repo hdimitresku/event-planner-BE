@@ -17,14 +17,13 @@ yarn-error.log*
 
 # env files
 .env*
-
 # vercel
 
 # typescript
 *.tsbuildinfo
 
-package-lock.json
 /dist
-
+/uploads
+package-lock.json
 # IDE
 .idea

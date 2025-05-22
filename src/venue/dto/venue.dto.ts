@@ -62,12 +62,6 @@ export class VenueDto {
   amenities: string[];
 
   @AutoMap()
-  @IsArray()
-  @IsString({ each: true })
-  @IsOptional()
-  photos: string[];
-
-  @AutoMap()
   @IsObject()
   @IsOptional()
   dayAvailability: {
@@ -114,4 +108,16 @@ export class VenueDto {
   @AutoMap()
   @IsDate()
   updatedAt: Date;
+
+  @IsObject()
+  matchCriteria?: {
+    venueType: boolean;
+    location: boolean;
+    capacity: boolean;
+    price: boolean;
+    amenities: boolean;
+  };
+
+  @IsBoolean()
+  similarityScore?: number;
 }

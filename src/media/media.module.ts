@@ -1,6 +1,6 @@
-import {Module} from '@nestjs/common';
+import {forwardRef, Module} from '@nestjs/common';
 import {TypeOrmModule} from '@nestjs/typeorm';
-import {MediaItem} from './media.entity';
+import {MediaItem} from './entities/media.entity';
 import {MediaService} from './media.service';
 import {MediaController} from './media.controller';
 import {MulterModule} from '@nestjs/platform-express';
@@ -8,11 +8,15 @@ import {ConfigModule, ConfigService} from '@nestjs/config';
 import {diskStorage} from 'multer';
 import {extname} from 'path';
 import {MediaItemProfile} from "@/media/media.mapper";
+import {ServiceModule} from "@/service/service.module";
+import {VenueModule} from "@/venue/venue.module";
 
 @Module({
     imports: [
         TypeOrmModule.forFeature([MediaItem]),
-        ConfigModule,
+        ConfigModule.forRoot(), // Initialize ConfigModule
+        forwardRef(() => VenueModule), // Handle circular dependency
+        forwardRef(() => ServiceModule),
         MulterModule.registerAsync({
             imports: [ConfigModule],
             useFactory: async (configService: ConfigService) => ({

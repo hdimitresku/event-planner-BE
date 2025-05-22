@@ -25,7 +25,9 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../user/entities/user.entity';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { MediaService } from '../media/media.service';
-import {MediaEntityType} from "@/media/media.entity";
+import {MediaEntityType} from "@/media/entities/media.entity";
+import {GetUser} from "@/auth/decorators/get-user.decorator";
+import {VenueType} from "@/shared/enums/venue-type.enum";
 
 @Controller('services')
 export class ServiceController {
@@ -40,7 +42,7 @@ export class ServiceController {
   @UseInterceptors(FilesInterceptor('images', 10))
   async create(
     @Body('data') data: string,
-    @Request() req,
+    @GetUser('id') userId: string,
     @UploadedFiles(
       new ParseFilePipe({
         validators: [
@@ -52,14 +54,14 @@ export class ServiceController {
     ) files: Express.Multer.File[],
   ) {
     const createServiceDto: CreateServiceDto = JSON.parse(data);
-    const service = await this.serviceService.create(createServiceDto, req.user);
+    const service = await this.serviceService.create(createServiceDto, userId);
 
     // Process and save images if any
     if (files?.length) {
       for (const file of files) {
         await this.mediaService.processAndSaveImage(
           file,
-          req.user.userId,
+          userId,
           service.id,
           MediaEntityType.SERVICE,
         );
@@ -77,6 +79,11 @@ export class ServiceController {
   @Get('type/:type')
   findByType(@Param('type') type: string) {
     return this.serviceService.findByType(type);
+  }
+
+  @Get('venue/type/:type')
+  findByVenueType(@Param('type') type: VenueType) {
+    return this.serviceService.findByVenueType(type);
   }
 
   @Get('venue/:venueId')

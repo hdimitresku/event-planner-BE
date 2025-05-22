@@ -19,13 +19,15 @@ import { VenueService } from './venue.service';
 import { CreateVenueDto } from './dto/create-venue.dto';
 import { UpdateVenueDto } from './dto/update-venue.dto';
 import { VenueQueryDto } from './dto/venue-query.dto';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
-import { UserRole } from '../user/entities/user.entity';
+import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
+import { RolesGuard } from '@/auth/guards/roles.guard';
+import { Roles } from '@/auth/decorators/roles.decorator';
+import { UserRole } from '@/user/entities/user.entity';
 import { FilesInterceptor } from '@nestjs/platform-express';
-import { MediaService } from '../media/media.service';
-import {MediaEntityType} from "@/media/media.entity";
+import { MediaService } from '@/media/media.service';
+import {MediaEntityType} from "@/media/entities/media.entity";
+import {GetUser} from "@/auth/decorators/get-user.decorator";
+import {VenueDto} from "@/venue/dto/venue.dto";
 
 @Controller('venues')
 export class VenueController {
@@ -40,7 +42,7 @@ export class VenueController {
   @UseInterceptors(FilesInterceptor('images', 10))
   async create(
     @Body('data') data: string,
-    @Request() req,
+    @GetUser('id') userId: string,
     @UploadedFiles(
       new ParseFilePipe({
         validators: [
@@ -52,14 +54,14 @@ export class VenueController {
     ) files: Express.Multer.File[],
   ) {
     const createVenueDto: CreateVenueDto = JSON.parse(data);
-    const venue = await this.venueService.create(createVenueDto, req.user);
+    const venue = await this.venueService.create(createVenueDto, userId);
 
     // Process and save images if any
     if (files?.length) {
       for (const file of files) {
         await this.mediaService.processAndSaveImage(
           file,
-          req.user.userId,
+          userId,
           venue.id,
           MediaEntityType.VENUE,
         );
@@ -86,7 +88,7 @@ export class VenueController {
   async update(
     @Param('id') id: string,
     @Body('data') data: string,
-    @Request() req,
+    @GetUser('id') userId: string,
     @UploadedFiles(
       new ParseFilePipe({
         validators: [
@@ -98,14 +100,14 @@ export class VenueController {
     ) files: Express.Multer.File[],
   ) {
     const updateVenueDto: UpdateVenueDto = JSON.parse(data);
-    const venue = await this.venueService.update(id, updateVenueDto, req.user);
+    const venue = await this.venueService.update(id, updateVenueDto, userId);
 
     // Process and save new images if any
     if (files?.length) {
       for (const file of files) {
         await this.mediaService.processAndSaveImage(
           file,
-          req.user.userId,
+          userId,
           venue.id,
           MediaEntityType.VENUE,
         );
@@ -113,6 +115,16 @@ export class VenueController {
     }
 
     return venue;
+  }
+
+  @Get(':venueId/similar')
+  async findSimilarVenues(
+      @Param('venueId') venueId: string,
+      @Query('criteria') criteria: string,
+      @Query('limit') limit: number = 3,
+  ): Promise<VenueDto[]> {
+    const criteriaArray = criteria ? criteria.split(',').map(c => c.trim()) : ['type'];
+    return this.venueService.findSimilarVenues(venueId, criteriaArray, limit);
   }
 
   @Delete(':id')

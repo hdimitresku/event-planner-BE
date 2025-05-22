@@ -1,4 +1,4 @@
-import {Module} from '@nestjs/common';
+import {forwardRef, Module} from '@nestjs/common';
 import {TypeOrmModule} from '@nestjs/typeorm';
 import {Service} from './entities/service.entity';
 import {ServiceOption} from './entities/service-option.entity';
@@ -8,12 +8,14 @@ import {ServiceProfile} from './service.mapper';
 import {MediaModule} from '@/media/media.module';
 import {Booking} from "@/booking/booking.entity";
 import {AutomapperModule} from "@automapper/nestjs";
+import {VenueModule} from "@/venue/venue.module";
 
 @Module({
     imports: [
         TypeOrmModule.forFeature([Service, ServiceOption, Booking]),
         MediaModule,
-        AutomapperModule
+        AutomapperModule,
+        forwardRef(()=> VenueModule),
     ],
     controllers: [ServiceController],
     providers: [ServiceService, ServiceProfile],

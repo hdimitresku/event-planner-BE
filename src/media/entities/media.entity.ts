@@ -1,52 +1,67 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, CreateDateColumn, UpdateDateColumn } from 'typeorm';
-import { User } from '../../user/entities/user.entity';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  CreateDateColumn,
+  UpdateDateColumn,
+  JoinColumn
+} from 'typeorm';
+import { AutoMap } from '@automapper/classes';
 import { Venue } from '../../venue/entities/venue.entity';
 import { Service } from '../../service/entities/service.entity';
 
-@Entity('media')
-export class Media {
+export enum MediaType {
+  IMAGE = 'image',
+  VIDEO = 'video',
+}
+
+export enum MediaEntityType {
+  VENUE = 'venue',
+  SERVICE = 'service',
+}
+
+@Entity('media_items')
+export class MediaItem {
   @PrimaryGeneratedColumn('uuid')
+  @AutoMap()
   id: string;
 
   @Column()
-  filename: string;
+  @AutoMap()
+  url: string;
+
+  @Column({ type: 'enum', enum: MediaType })
+  @AutoMap()
+  type: MediaType;
+
+  @Column('jsonb')
+  @AutoMap()
+  description: { en: string; sq: string };
+
+  @Column({ type: 'enum', enum: MediaEntityType })
+  @AutoMap()
+  entityType: MediaEntityType;
 
   @Column()
-  originalName: string;
+  @AutoMap()
+  entityId: string;
 
-  @Column()
-  mimeType: string;
-
-  @Column()
-  size: number;
-
-  @Column()
-  path: string;
-
-  @Column({ nullable: true })
-  userId: string;
-
-  @ManyToOne(() => User)
-  user: User;
-
-  @Column({ nullable: true })
-  venueId: string;
-
-  @ManyToOne(() => Venue)
+  @ManyToOne(() => Venue, venue => venue.media, { nullable: true })
+  @JoinColumn({ name: 'venue_id' })
+  @AutoMap()
   venue: Venue;
 
-  @Column({ nullable: true })
-  serviceId: string;
-
-  @ManyToOne(() => Service)
-  service: Service;
-
-  @Column({ type: 'jsonb', nullable: true })
-  metadata: Record<string, any>;
+  @ManyToOne(() => Service, (service) => service.media, { nullable: true, onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'service_id' }) // Added JoinColumn
+  @AutoMap()
+  service?: Service;
 
   @CreateDateColumn()
+  @AutoMap()
   createdAt: Date;
 
   @UpdateDateColumn()
+  @AutoMap()
   updatedAt: Date;
-} 
+}

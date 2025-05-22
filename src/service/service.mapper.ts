@@ -9,7 +9,7 @@ import { ServiceOption } from './entities/service-option.entity';
 import { ServiceOptionDto } from './dto/service-option-dto';
 import { User } from '@/user/entities/user.entity';
 import { UserDto } from '@/user/dto/user.dto';
-import { MediaItem } from '@/media/media.entity';
+import { MediaItem } from '@/media/entities/media.entity';
 import { MediaItemDto } from '@/media/dto/media.dto';
 
 @Injectable()

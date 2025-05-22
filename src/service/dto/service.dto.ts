@@ -57,6 +57,9 @@ export class ServiceDto {
   };
 
   @AutoMap()
+  icon: string;
+
+  @AutoMap()
   @IsBoolean()
   isActive: boolean;
 

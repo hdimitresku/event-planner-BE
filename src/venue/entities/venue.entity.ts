@@ -11,7 +11,7 @@ import {
 } from 'typeorm';
 import { User } from '@/user/entities/user.entity';
 import { Booking } from '@/booking/booking.entity';
-import { MediaItem } from '@/media/media.entity';
+import { MediaItem } from '@/media/entities/media.entity';
 import { Review } from '@/review/review.entity';
 import { VenueType } from '@/shared/enums/venue-type.enum';
 import {AddressInterface} from "@/shared/interfaces/address.interface";
@@ -26,7 +26,7 @@ export class Venue {
   id: string;
 
   @ManyToOne(() => User)
-  @JoinColumn({ name: 'id' })
+  @JoinColumn({ name: 'owner_id' })
   @AutoMap()
   owner: User;
 

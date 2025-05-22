@@ -1,5 +1,5 @@
 import { IsEnum, IsObject, IsOptional, IsString } from 'class-validator';
-import { MediaType } from '../media.entity';
+import { MediaType } from '../entities/media.entity';
 
 export class UpdateMediaDto {
   @IsOptional()

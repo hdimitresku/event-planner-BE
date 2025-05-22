@@ -5,7 +5,7 @@ import { User } from '@/user/entities/user.entity';
 import { UserDto } from '@/user/dto/user.dto';
 import { Booking } from '@/booking/booking.entity';
 import { BookingDto } from '@/booking/dto/booking.dto';
-import { MediaItem } from '@/media/media.entity';
+import { MediaItem } from '@/media/entities/media.entity';
 import { Review } from '@/review/review.entity';
 import { ReviewDto } from '@/review/dto/review.dto';
 import { VenueDto } from './dto/venue.dto';
@@ -60,10 +60,6 @@ export class VenueProfile extends AutomapperProfile {
           forMember(
               (dest) => dest.amenities,
               mapFrom((src) => src.amenities || [])
-          ),
-          forMember(
-              (dest) => dest.photos,
-              mapFrom((src) => src.photos || [])
           ),
           forMember(
               (dest) => dest.dayAvailability,
@@ -139,10 +135,6 @@ export class VenueProfile extends AutomapperProfile {
           forMember(
               (dest) => dest.amenities,
               mapFrom((src) => src.amenities)
-          ),
-          forMember(
-              (dest) => dest.photos,
-              mapFrom((src) => src.photos)
           ),
           forMember(
               (dest) => dest.dayAvailability,

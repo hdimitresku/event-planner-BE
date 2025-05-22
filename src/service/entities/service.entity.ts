@@ -9,7 +9,7 @@ import {
   OneToMany,
 } from 'typeorm';
 import { User } from '../../user/entities/user.entity';
-import { MediaItem } from '../../media/media.entity';
+import { MediaItem } from '../../media/entities/media.entity';
 import { ServiceType } from '../../shared/enums/service-type.enum';
 import { VenueType } from '../../shared/enums/venue-type.enum';
 import {ServiceOption} from "@/service/entities/service-option.entity";
@@ -22,7 +22,7 @@ export class Service {
   id: string;
 
   @ManyToOne(() => User)
-  @JoinColumn({ name: 'id' })
+  @JoinColumn({ name: 'provider_id' })
   @AutoMap()
   provider: User;
 
@@ -61,6 +61,10 @@ export class Service {
   @Column({ default: true })
   @AutoMap()
   isActive: boolean;
+
+  @Column({ type: 'varchar', nullable: true })
+  @AutoMap()
+  icon: string;
 
   @Column({ type: 'jsonb', nullable: true })
   @AutoMap()
