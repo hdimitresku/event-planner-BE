@@ -15,6 +15,10 @@ import {UpdateBookingStatusDto} from './dto/update-booking-status.dto';
 import { InjectMapper } from '@automapper/nestjs';
 import { Mapper } from '@automapper/core';
 import { BookingDto } from './dto/booking.dto';
+import {UserDto} from "@/user/dto/user.dto";
+import {ServiceDto} from "@/service/dto/service.dto";
+import {Service} from "@/service/entities/service.entity";
+import {ServiceWithBookingsDto} from "@/service/dto/service-with-bookings.dto";
 
 @Injectable()
 export class BookingService {
@@ -29,9 +33,9 @@ export class BookingService {
     ) {
     }
     
-    async create(createBookingDto: CreateBookingDto, user): Promise<BookingDto> {
+    async create(createBookingDto: CreateBookingDto, user: UserDto): Promise<BookingDto> {
         const venue = await this.venueService.findVenueEntity(createBookingDto.venueId);
-        const userId = user.userId;
+        const userId = user.id;
 
         // Check day availability for the venue
         if (venue.dayAvailability) {
@@ -102,6 +106,7 @@ export class BookingService {
             ...createBookingDto,
             userId: userId,
             venueId: venue.id,
+            user: user,
             totalAmount,
             status: BookingStatus.PENDING,
             serviceOptions,
@@ -126,6 +131,59 @@ export class BookingService {
             bookingDto.serviceFee = bookingDto.totalAmount * (bookingDto.serviceFeePercentage / 100);
         })
         return bookingsDto;
+    }
+
+    async findAllBookingsByOwnedServices(userId: string): Promise<ServiceWithBookingsDto[]> {
+        // Step 1: Retrieve service options for the user
+        const serviceOptions = await this.serviceOptionRepository.find({
+            where: { service: { provider: { id: userId } } },
+            relations: ['service', 'service.provider'],
+        });
+
+        if (serviceOptions.length === 0) {
+            throw new NotFoundException('No service options found for the user');
+        }
+
+        // Step 2: Group service options by their service
+        const serviceMap = new Map<string, { service: any; options: any[] }>();
+        serviceOptions.forEach(option => {
+            const serviceId = option.service.id;
+            if (!serviceMap.has(serviceId)) {
+                serviceMap.set(serviceId, { service: option.service, options: [] });
+            }
+            serviceMap.get(serviceId)!.options.push(option);
+        });
+
+        // Step 3: Fetch bookings for all service options
+        const serviceOptionIds = serviceOptions.map(option => option.id);
+        const bookings = await this.bookingRepository.find({
+            where: { serviceOptions: { id: In(serviceOptionIds) } },
+            relations: ['venue', 'user', 'serviceOptions', 'serviceOptions.service'],
+        });
+
+        // Step 4: Map bookings to their respective services
+        const servicesWithBookings = Array.from(serviceMap.values()).map(({ service, options }) => {
+            // Find bookings for this service's options
+            const serviceOptionIds = options.map(option => option.id);
+            const serviceBookings = bookings.filter(booking =>
+                booking.serviceOptions.some(option => serviceOptionIds.includes(option.id))
+            );
+
+            // Map bookings to BookingDto and calculate serviceFee
+            const bookingsDto = this.mapper.mapArray(serviceBookings, Booking, BookingDto);
+            bookingsDto.forEach(bookingDto => {
+                bookingDto.serviceFee = bookingDto.totalAmount * (bookingDto.serviceFeePercentage / 100);
+            });
+
+            // Map service to ServiceDto and include bookings
+            const serviceDto = this.mapper.map(service, Service, ServiceDto);
+            return {
+                ...serviceDto,
+                bookings: bookingsDto,
+            };
+        });
+
+        return servicesWithBookings;
     }
 
     async findAllByVenue(userId: string, venueId: string): Promise<BookingDto[]> {

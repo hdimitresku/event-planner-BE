@@ -15,6 +15,7 @@ import { UpdateBookingDto } from './dto/update-booking.dto';
 import { UpdateBookingStatusDto } from './dto/update-booking-status.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import {GetUser} from "@/auth/decorators/get-user.decorator";
+import {UserDto} from "@/user/dto/user.dto";
 
 @Controller('bookings')
 @UseGuards(JwtAuthGuard)
@@ -22,8 +23,17 @@ export class BookingController {
   constructor(private readonly bookingService: BookingService) {}
 
   @Post()
-  create(@Body() createBookingDto: CreateBookingDto, @Request() req) {
-    return this.bookingService.create(createBookingDto, req.user);
+  create(@Body() createBookingDto: CreateBookingDto, @GetUser() user: UserDto) {
+    return this.bookingService.create(createBookingDto, user);
+  }
+
+
+  @Get('services')
+  @UseGuards(JwtAuthGuard)
+  findAllBookingsByOwnedServices(
+      @GetUser('id') userId: string,
+  ) {
+    return this.bookingService.findAllBookingsByOwnedServices(userId);
   }
 
   @Get()
@@ -40,6 +50,7 @@ export class BookingController {
   findOne(@Param('id') id: string, @Request() req) {
     return this.bookingService.findOne(id, req.user);
   }
+
 
   @Patch(':id')
   update(

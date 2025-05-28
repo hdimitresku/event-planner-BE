@@ -116,7 +116,7 @@ export class VenueService {
     async findByOwner(ownerId: string): Promise<VenueDto[]> {
         const venues = await this.venueRepository.find({
             where: {owner: {id: ownerId}},
-            relations: ['media', 'owner', 'bookings', "bookings.serviceOptions"],
+            relations: ['media', 'owner', 'bookings', "bookings.serviceOptions", "bookings.user"],
         });
         return this.mapper.mapArray(venues, Venue, VenueDto);
     }

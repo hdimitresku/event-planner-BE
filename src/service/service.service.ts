@@ -44,6 +44,8 @@ export class ServiceService {
     return service;
   }
 
+
+
   async create(createServiceDto: CreateServiceDto, userId: string): Promise<ServiceDto> {
     const service = this.serviceRepository.create({
       ...createServiceDto,
@@ -80,6 +82,17 @@ export class ServiceService {
 
     const services = await this.serviceRepository.find({
       where,
+      relations: ['provider', 'options', 'media'],
+      order: {
+        createdAt: 'DESC',
+      },
+    });
+    return this.mapper.mapArray(services, Service, ServiceDto);
+  }
+
+  async findOwned(userId: string): Promise<ServiceDto[]> {
+    const services = await this.serviceRepository.find({
+      where: { provider: { id: userId }, isActive: true },
       relations: ['provider', 'options', 'media'],
       order: {
         createdAt: 'DESC',
