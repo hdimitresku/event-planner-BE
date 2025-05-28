@@ -13,7 +13,7 @@ import {
 import { Type } from 'class-transformer';
 import { UserDto } from '@/user/dto/user.dto'; // Assuming UserDto exists
 import { BookingDto } from '@/booking/dto/booking.dto';
-import {PaymentStatus} from "@/booking/booking.entity";
+import {PaymentStatus} from "@/booking/entities/booking.entity";
 import {PaymentMethod} from "@/payment/payment.entity"; // Assuming BookingDto exists
 
 export class PaymentDto {

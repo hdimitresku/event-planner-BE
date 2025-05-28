@@ -3,7 +3,7 @@ import { AutomapperProfile, InjectMapper } from '@automapper/nestjs';
 import { Mapper, MappingProfile, createMap, forMember, mapFrom } from '@automapper/core';
 import { User } from '@/user/entities/user.entity';
 import { UserDto } from '@/user/dto/user.dto';
-import { Booking } from '@/booking/booking.entity';
+import { Booking } from '@/booking/entities/booking.entity';
 import { BookingDto } from '@/booking/dto/booking.dto';
 import {Payment} from "@/payment/payment.entity";
 import {PaymentDto} from "@/payment/dto/payment.dto";

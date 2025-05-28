@@ -1,5 +1,5 @@
 import { IsEnum, IsOptional, IsString } from 'class-validator';
-import { BookingStatus } from '../booking.entity';
+import { BookingStatus } from '../entities/booking.entity';
 
 export class UpdateBookingStatusDto {
   @IsEnum(BookingStatus)

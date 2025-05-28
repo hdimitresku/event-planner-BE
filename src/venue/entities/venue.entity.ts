@@ -10,7 +10,7 @@ import {
   ManyToMany,
 } from 'typeorm';
 import { User } from '@/user/entities/user.entity';
-import { Booking } from '@/booking/booking.entity';
+import { Booking } from '@/booking/entities/booking.entity';
 import { MediaItem } from '@/media/entities/media.entity';
 import { Review } from '@/review/review.entity';
 import { VenueType } from '@/shared/enums/venue-type.enum';

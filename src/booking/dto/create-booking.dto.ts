@@ -1,39 +1,49 @@
-import { IsString, IsDate, IsNumber, IsOptional, IsEnum, Min, IsArray, IsUUID } from 'class-validator';
-import { Type } from 'class-transformer';
-import { BookingStatus } from '../booking.entity';
+import {IsString, IsDate, IsNumber, IsOptional, IsEnum, Min, IsArray, IsUUID, IsObject} from 'class-validator';
+import {Type} from 'class-transformer';
+import {BookingStatus, EventType} from '../entities/booking.entity';
+import {AutoMap} from "@automapper/classes";
 
 export class CreateBookingDto {
-  @IsString()
-  venueId: string;
+    @IsString()
+    venueId: string;
 
-  @Type(() => Date)
-  @IsDate()
-  startDate: Date;
+    @Type(() => Date)
+    @IsDate()
+    startDate: Date;
 
-  @Type(() => Date)
-  @IsDate()
-  endDate: Date;
+    @Type(() => Date)
+    @IsDate()
+    endDate: Date;
 
-  @IsString()
-  startTime: string;
+    @IsString()
+    startTime: string;
 
-  @IsString()
-  endTime: string;
+    @IsString()
+    endTime: string;
 
-  @IsNumber()
-  @Min(1)
-  numberOfGuests: number;
+    @IsNumber()
+    @Min(1)
+    numberOfGuests: number;
 
-  @IsArray()
-  @IsUUID('4', { each: true })
-  @IsOptional()
-  serviceOptionIds?: string[];
+    @IsArray()
+    @IsUUID('4', {each: true})
+    @IsOptional()
+    serviceOptionIds?: string[];
 
-  @IsString()
-  @IsOptional()
-  specialRequests?: string;
+    @IsString()
+    @IsOptional()
+    specialRequests?: string;
 
-  @IsEnum(BookingStatus)
-  @IsOptional()
-  status?: BookingStatus;
+    @IsEnum(BookingStatus)
+    @IsOptional()
+    status?: BookingStatus;
+
+    @IsObject()
+    @IsOptional()
+    @AutoMap()
+    metadata?: Record<string, any>;
+
+    @IsEnum(EventType)
+    @IsOptional()
+    eventType?: EventType;
 } 

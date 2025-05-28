@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, In } from 'typeorm';
-import { Booking } from '@/booking/booking.entity';
+import { Booking } from '@/booking/entities/booking.entity';
 import { Venue } from '../venue/entities/venue.entity';
 import { ExternalReview } from '../external-review/entities/external-review.entity';
 import { AnalyticsLog } from './analytics-log.entity';

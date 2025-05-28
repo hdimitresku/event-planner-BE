@@ -6,7 +6,7 @@ import { UserDto } from '@/user/dto/user.dto';
 import { Venue } from '@/venue/entities/venue.entity';
 import { VenueDto } from '@/venue/dto/venue.dto';
 import { ServiceOption } from '@/service/entities/service-option.entity';
-import {Booking} from "@/booking/booking.entity";
+import {Booking} from "@/booking/entities/booking.entity";
 import {BookingDto} from "@/booking/dto/booking.dto";
 import {ServiceOptionDto} from "@/service/dto/service-option-dto";
 

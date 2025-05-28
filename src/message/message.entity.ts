@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn } from 'typeorm';
 import { User } from '../user/entities/user.entity';
-import { Booking } from '../booking/booking.entity';
+import { Booking } from '../booking/entities/booking.entity';
 
 @Entity('messages')
 export class Message {

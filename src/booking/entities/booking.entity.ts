@@ -29,6 +29,20 @@ export enum PaymentStatus {
     CANCELLED = 'cancelled',
 }
 
+export enum EventType {
+    PHOTOSHOOT = 'photoshoot',
+    BABYSHOWER = 'babyshower',
+    BAPTISM = 'baptism',
+    GENDER_REVEAL = 'gender_reveal',
+    SEASONAL_EVENT = 'seasonal_event',
+    CORPORATE = 'corporate',
+    WEDDING = 'wedding',
+    CONFERENCE = 'conference',
+    BIRTHDAY = 'birthday',
+    ANNIVERSARY = 'anniversary',
+    OTHER = 'other',
+}
+
 @Entity('bookings')
 export class Booking {
     @PrimaryGeneratedColumn('uuid')
@@ -73,6 +87,10 @@ export class Booking {
     @AutoMap()
     totalAmount: number;
 
+    @Column({type: 'decimal', precision: 10, scale: 2, default: 5})
+    @AutoMap()
+    serviceFeePercentage: number;
+
     @Column({
         type: 'enum',
         enum: BookingStatus,
@@ -80,6 +98,14 @@ export class Booking {
     })
     @AutoMap()
     status: BookingStatus;
+
+    @Column({
+        type: 'enum',
+        enum: EventType,
+        default: EventType.OTHER
+    })
+    @AutoMap()
+    eventType: EventType;
 
     @Column({ type: 'text', nullable: true })
     @AutoMap()

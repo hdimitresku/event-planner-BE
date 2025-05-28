@@ -1,7 +1,7 @@
 import {Injectable, NotFoundException, ForbiddenException, BadRequestException, UnauthorizedException} from '@nestjs/common';
 import {InjectRepository} from '@nestjs/typeorm';
 import {Repository, Between, In} from 'typeorm';
-import {Booking, BookingStatus} from './booking.entity';
+import {Booking, BookingStatus} from './entities/booking.entity';
 import {CreateBookingDto} from './dto/create-booking.dto';
 import {UpdateBookingDto} from './dto/update-booking.dto';
 import {User} from '../user/entities/user.entity';
@@ -115,12 +115,30 @@ export class BookingService {
         return this.mapper.map(savedBooking, Booking, BookingDto);
     }
 
-    async findAll(user): Promise<BookingDto[]> {
+    async findAll(userId: string): Promise<BookingDto[]> {
         const bookings = await this.bookingRepository.find({
-            where: {userId: user.userId},
+            where: {userId},
             relations: ['venue', 'user', 'serviceOptions', 'serviceOptions.service'],
         });
-        return this.mapper.mapArray(bookings, Booking, BookingDto);
+
+        let bookingsDto = this.mapper.mapArray(bookings, Booking, BookingDto);
+        bookingsDto.forEach(bookingDto => {
+            bookingDto.serviceFee = bookingDto.totalAmount * (bookingDto.serviceFeePercentage / 100);
+        })
+        return bookingsDto;
+    }
+
+    async findAllByVenue(userId: string, venueId: string): Promise<BookingDto[]> {
+        const bookings = await this.bookingRepository.find({
+            where: {userId, venueId},
+            relations: ['venue', 'user', 'serviceOptions', 'serviceOptions.service'],
+        });
+
+        let bookingsDto = this.mapper.mapArray(bookings, Booking, BookingDto);
+        bookingsDto.forEach(bookingDto => {
+            bookingDto.serviceFee = bookingDto.totalAmount * (bookingDto.serviceFeePercentage / 100);
+        })
+        return bookingsDto;
     }
 
     private async findBookingEntity(id: string): Promise<Booking> {
@@ -143,7 +161,9 @@ export class BookingService {
             throw new ForbiddenException('You do not have permission to view this booking');
         }
 
-        return this.mapper.map(booking, Booking, BookingDto);
+        let bookingDto = this.mapper.map(booking, Booking, BookingDto);
+        bookingDto.serviceFee = bookingDto.totalAmount * (bookingDto.serviceFeePercentage / 100);
+        return bookingDto;
     }
 
     async update(id: string, updateBookingDto: UpdateBookingDto, user: User): Promise<BookingDto> {

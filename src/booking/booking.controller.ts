@@ -14,6 +14,7 @@ import { CreateBookingDto } from './dto/create-booking.dto';
 import { UpdateBookingDto } from './dto/update-booking.dto';
 import { UpdateBookingStatusDto } from './dto/update-booking-status.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import {GetUser} from "@/auth/decorators/get-user.decorator";
 
 @Controller('bookings')
 @UseGuards(JwtAuthGuard)
@@ -26,8 +27,13 @@ export class BookingController {
   }
 
   @Get()
-  findAll(@Request() req) {
-    return this.bookingService.findAll(req.user);
+  findAll(@GetUser('id') userId: string) {
+    return this.bookingService.findAll(userId);
+  }
+
+  @Get(':venueId')
+  findAllByVenue(@GetUser('id') userId: string, @Param('venueId') venueId: string) {
+    return this.bookingService.findAllByVenue(userId, venueId);
   }
 
   @Get(':id')

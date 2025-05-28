@@ -9,7 +9,7 @@ import {
 } from 'typeorm';
 import { AutoMap } from '@automapper/classes';
 import { User } from '../user/entities/user.entity';
-import { Booking } from '../booking/booking.entity';
+import { Booking } from '../booking/entities/booking.entity';
 
 export enum PaymentStatus {
   PENDING = 'pending',

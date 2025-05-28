@@ -1,7 +1,7 @@
 import {Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany, OneToOne} from 'typeorm';
 import {Venue} from '@/venue/entities/venue.entity';
 import {Service} from '@/service/entities/service.entity';
-import {Booking} from '@/booking/booking.entity';
+import {Booking} from '@/booking/entities/booking.entity';
 import {Review} from "@/review/review.entity";
 import {Message} from '@/message/entities/message.entity';
 import {AutoMap} from "@automapper/classes";

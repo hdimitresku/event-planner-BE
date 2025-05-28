@@ -12,7 +12,7 @@ import {Message} from "@/message/message.entity";
 import {Venue} from "@/venue/entities/venue.entity";
 import {Service} from "@/service/entities/service.entity";
 import {Review} from "@/review/review.entity";
-import {Booking} from "@/booking/booking.entity";
+import {Booking} from "@/booking/entities/booking.entity";
 import {AddressInterface} from "@/shared/interfaces/address.interface";
 
 @Injectable()

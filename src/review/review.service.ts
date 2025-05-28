@@ -7,7 +7,7 @@ import { UpdateReviewDto } from './dto/update-review.dto';
 import { User } from '../user/entities/user.entity';
 import { VenueService } from '../venue/venue.service';
 import { BookingService } from '../booking/booking.service';
-import { BookingStatus } from '../booking/booking.entity';
+import { BookingStatus } from '../booking/entities/booking.entity';
 import { UserDto } from '../user/dto/user.dto';
 import { InjectMapper } from '@automapper/nestjs';
 import { Mapper } from '@automapper/core';
@@ -101,7 +101,7 @@ export class ReviewService {
 
   private async checkCompletedBooking(userId: string, venueId: string): Promise<boolean> {
     // Fetch all bookings for the user
-    const bookings = await this.bookingService.findAll({ id: userId } as any);
+    const bookings = await this.bookingService.findAll(userId);
     // Filter bookings for the specific venue
     return bookings.some(booking => booking.venue.id === venueId && booking.status === BookingStatus.COMPLETED);
   }

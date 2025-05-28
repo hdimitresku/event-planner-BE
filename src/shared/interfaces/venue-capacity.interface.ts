@@ -3,3 +3,13 @@ export interface VenueCapacityInterface {
     max: number;
     recommended: number;
 }
+
+export const dayOrder = [
+    "monday",
+    "tuesday",
+    "wednesday",
+    "thursday",
+    "friday",
+    "saturday",
+    "sunday"
+];

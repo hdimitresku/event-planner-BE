@@ -14,7 +14,7 @@ import { Type } from 'class-transformer';
 import { UserDto } from '@/user/dto/user.dto';
 import { VenueDto } from '@/venue/dto/venue.dto';
 import {ServiceOptionDto} from "@/service/dto/service-option-dto";
-import {BookingStatus} from "@/booking/booking.entity";
+import {BookingStatus, EventType} from "@/booking/entities/booking.entity";
 
 export class BookingDto {
   @AutoMap()
@@ -56,8 +56,16 @@ export class BookingDto {
   totalAmount: number;
 
   @AutoMap()
+  @IsNumber({ maxDecimalPlaces: 2 })
+  serviceFeePercentage: number;
+
+  @AutoMap()
   @IsEnum(BookingStatus)
   status: BookingStatus;
+
+  @IsEnum(EventType)
+  @AutoMap()
+  eventType: EventType;
 
   @AutoMap()
   @IsString()
@@ -86,4 +94,7 @@ export class BookingDto {
   @AutoMap()
   @IsDate()
   updatedAt: Date;
+
+  @IsNumber()
+  serviceFee?: number;
 }

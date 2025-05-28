@@ -6,7 +6,7 @@ import {ServiceService} from './service.service';
 import {ServiceController} from './service.controller';
 import {ServiceProfile} from './service.mapper';
 import {MediaModule} from '@/media/media.module';
-import {Booking} from "@/booking/booking.entity";
+import {Booking} from "@/booking/entities/booking.entity";
 import {AutomapperModule} from "@automapper/nestjs";
 import {VenueModule} from "@/venue/venue.module";
 

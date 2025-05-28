@@ -2,7 +2,7 @@ import {Module} from '@nestjs/common';
 import {TypeOrmModule} from '@nestjs/typeorm';
 import {BookingService} from './booking.service';
 import {BookingController} from './booking.controller';
-import {Booking} from './booking.entity';
+import {Booking} from './entities/booking.entity';
 import {VenueModule} from '../venue/venue.module';
 import {ServiceOption} from '../service/entities/service-option.entity';
 import {ServiceModule} from "@/service/service.module";
