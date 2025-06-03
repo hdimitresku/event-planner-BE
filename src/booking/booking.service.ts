@@ -314,7 +314,7 @@ export class BookingService {
         // Calculate venue price
         let venuePrice = 0;
         if (venue.price.type === 'hourly') {
-            venuePrice = venue.price.amount * days * hours;
+            venuePrice = venue.price.amount * (days == 0 ? 1 : days) * hours;
         } else if (venue.price.type === 'perPerson') {
             venuePrice = venue.price.amount * booking.numberOfGuests;
         } else {

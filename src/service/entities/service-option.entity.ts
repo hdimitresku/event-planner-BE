@@ -26,7 +26,7 @@ export class ServiceOption {
     metadata: Record<string, any>;
 
     @ManyToOne(() => Service, service => service.options)
-    @JoinColumn({ name: 'id' })
+    @JoinColumn({ name: 'service_id' })
     @AutoMap()
     service: Service;
 
