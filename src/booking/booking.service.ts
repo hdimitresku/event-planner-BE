@@ -1,6 +1,6 @@
-import {Injectable, NotFoundException, ForbiddenException, BadRequestException, UnauthorizedException} from '@nestjs/common';
+import {BadRequestException, ForbiddenException, Injectable, NotFoundException} from '@nestjs/common';
 import {InjectRepository} from '@nestjs/typeorm';
-import {Repository, Between, In} from 'typeorm';
+import {Between, In, Repository} from 'typeorm';
 import {Booking, BookingStatus} from './entities/booking.entity';
 import {CreateBookingDto} from './dto/create-booking.dto';
 import {UpdateBookingDto} from './dto/update-booking.dto';
@@ -9,12 +9,14 @@ import {VenueService} from '../venue/venue.service';
 import {Venue} from '@/venue/entities/venue.entity';
 import {ServiceOption} from '../service/entities/service-option.entity';
 import {ServiceService} from '@/service/service.service';
-import {checkServiceDayAvailability} from "@/booking/validators/booking-service-availability.validator";
-import {checkVenueDayAvailability} from "@/booking/validators/booking-service-availability.validator";
+import {
+    checkServiceDayAvailability,
+    checkVenueDayAvailability
+} from "@/booking/validators/booking-service-availability.validator";
 import {UpdateBookingStatusDto} from './dto/update-booking-status.dto';
-import { InjectMapper } from '@automapper/nestjs';
-import { Mapper } from '@automapper/core';
-import { BookingDto } from './dto/booking.dto';
+import {InjectMapper} from '@automapper/nestjs';
+import {Mapper} from '@automapper/core';
+import {BookingDto} from './dto/booking.dto';
 import {UserDto} from "@/user/dto/user.dto";
 import {ServiceDto} from "@/service/dto/service.dto";
 import {Service} from "@/service/entities/service.entity";
@@ -304,7 +306,7 @@ export class BookingService {
         serviceOptions: ServiceOption[]
     ): Promise<number> {
         const days = Math.ceil(
-            (booking.endDate.getTime() - booking.startDate.getTime()) / (1000 * 60 * 60 * 24),
+            (new Date(booking.endDate).getTime() - new Date(booking.startDate).getTime()) / (1000 * 60 * 60 * 24),
         );
 
         const [startHour] = booking.startTime.split(':').map(Number);
@@ -341,11 +343,10 @@ export class BookingService {
         endDate: Date,
     ): Promise<boolean> {
         for (const option of serviceOptions) {
-            const service = await this.serviceService.findOne(option.service.id);
 
             // Check if the dates overlap with any blocked dates in metadata
-            if (service.metadata?.blockedDates) {
-                for (const blockedDate of service.metadata.blockedDates) {
+            if (option.metadata?.blockedDates) {
+                for (const blockedDate of option.metadata.blockedDates) {
                     const blockedStart = new Date(blockedDate.startDate);
                     const blockedEnd = new Date(blockedDate.endDate);
 
@@ -363,12 +364,12 @@ export class BookingService {
             const conflictingBookings = await this.bookingRepository.find({
                 where: [
                     {
-                        serviceOptions: { service: { id: service.id } },
+                        serviceOptions: option,
                         status: BookingStatus.CONFIRMED,
                         startDate: Between(startDate, endDate),
                     },
                     {
-                        serviceOptions: { service: { id: service.id } },
+                        serviceOptions: option,
                         status: BookingStatus.PENDING,
                         startDate: Between(startDate, endDate),
                     },
@@ -438,14 +439,23 @@ export class BookingService {
         bookingId: string,
         serviceId: string,
         updateStatusDto: UpdateBookingStatusDto,
-        serviceOwner,
+        serviceOwner: UserDto,
     ) {
         const booking = await this.findBookingEntity(bookingId);
 
         // Check if the service owner is the provider of any of the booking's services
         const isServiceProvider = booking.serviceOptions.some(
-            option => option.service.provider.id === serviceOwner.userId,
+            option => option.service.provider.id === serviceOwner.id,
         );
+
+        // Find the specific service option
+        const option: ServiceOption = booking.serviceOptions.find(option =>
+            option.service.id === serviceId
+        );
+
+        if (!option) {
+            throw new BadRequestException('Service option not found in this booking');
+        }
 
         if (!isServiceProvider) {
             throw new ForbiddenException('You can only update bookings for your own services');
@@ -460,7 +470,42 @@ export class BookingService {
         }
 
         const oldStatus = booking.status;
-        Object.assign(booking, updateStatusDto);
+        if (updateStatusDto.status === BookingStatus.CANCELLED) {
+            // Initialize options array if it doesn't exist
+            const existingOptions = booking.metadata?.options || [];
+
+            // Add new option to the array
+            const newOption = {
+                serviceId: serviceId,
+                id: option.id,
+                status: updateStatusDto.status,
+                rejectionReason: updateStatusDto.rejectionReason
+            };
+
+            booking.metadata = {
+                ...booking.metadata,
+                options: [...existingOptions, newOption]
+            };
+
+            const newOptions = booking.serviceOptions.filter(opt => opt.id !== option.id);
+            booking.totalAmount = await this.calculateTotalPrice(booking.venue, booking, newOptions);
+        } else if (updateStatusDto.status === BookingStatus.CONFIRMED) {
+            // Initialize options array if it doesn't exist
+            const existingOptions = booking.metadata?.options || [];
+
+            // Add new option to the array
+            const newOption = {
+                serviceId: serviceId,
+                id: option.id,
+                status: updateStatusDto.status
+            };
+
+            booking.metadata = {
+                ...booking.metadata,
+                options: [...existingOptions, newOption]
+            };
+        }
+
         const updatedBooking = await this.bookingRepository.save(booking);
 
         // If status changed, update availability

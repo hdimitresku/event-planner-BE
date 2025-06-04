@@ -115,7 +115,7 @@ export class Booking {
     @AutoMap()
     numberOfGuests: number;
 
-    @ManyToMany(() => ServiceOption)
+    @ManyToMany(() => ServiceOption, { cascade: true })
     @JoinTable()
     @AutoMap()
     serviceOptions: ServiceOption[];

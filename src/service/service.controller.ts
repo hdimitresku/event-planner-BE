@@ -104,6 +104,14 @@ export class ServiceController {
         return this.serviceService.findOne(id);
     }
 
+    @Get(':id/options/:optionId')
+    findOptionById(
+        @Param('id') id: string,
+        @Param('optionId') optionId: string,
+    ) {
+        return this.serviceService.findOptionById(optionId);
+    }
+
     @Patch(':id')
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.HOST)

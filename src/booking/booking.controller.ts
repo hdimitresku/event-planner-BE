@@ -84,13 +84,13 @@ export class BookingController {
     @Param('id') id: string,
     @Param('serviceId') serviceId: string,
     @Body() updateStatusDto: UpdateBookingStatusDto,
-    @Request() req,
+    @GetUser() user: UserDto,
   ) {
     return this.bookingService.updateServiceBookingStatus(
       id,
       serviceId,
       updateStatusDto,
-      req.user,
+      user,
     );
   }
 } 
