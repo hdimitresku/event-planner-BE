@@ -15,9 +15,6 @@ COPY . .
 # Build the application
 RUN npm run build
 
-# Run the prebuild script
-RUN npm run prebuild
-
 # Production stage
 FROM node:20-alpine
 
