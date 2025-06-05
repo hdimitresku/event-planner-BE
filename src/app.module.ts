@@ -51,7 +51,7 @@ import { join } from 'path';
                 password: configService.get('DB_PASSWORD', 'root'),
                 database: configService.get('DB_DATABASE', 'event_planner'),
                 entities: [__dirname + '/**/*.entity{.ts,.js}'],
-                synchronize: true,
+                synchronize: false,
                 logging: configService.get('NODE_ENV') !== 'production',
             }),
             inject: [ConfigService],
