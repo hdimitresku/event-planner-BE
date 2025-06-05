@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Booking Status Update</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f2f4f8;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+        .container {
+            max-width: 640px;
+            margin: 40px auto;
+            background: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+
+        .header {
+            background: #e6f0fc;
+            padding: 30px 20px;
+            text-align: center;
+        }
+
+        .header img {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 10px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            color: #0d47a1;
+        }
+
+        .content {
+            padding: 30px 20px;
+        }
+
+        .content h2 {
+            color: #0d47a1;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 18px;
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 5px;
+        }
+
+        .content p {
+            margin: 6px 0;
+        }
+
+        .status {
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 16px;
+            text-align: center;
+        }
+
+        .confirmed {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .cancelled {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .completed {
+            background-color: #cce5ff;
+            color: #004085;
+        }
+
+        .footer {
+            font-size: 12px;
+            color: #777;
+            text-align: center;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-top: 1px solid #eee;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <img src="cid:rezervoLogo" alt="Rezervo Ambientin Logo" />
+        <h1>Booking Status Update</h1>
+    </div>
+    <div class="content">
+        <p>Dear {{user.firstName}},</p>
+
+        <p>Your booking status has been updated.</p>
+
+        <div class="status {{status}}">
+            <span>New Status: {{status}}</span>
+        </div>
+
+        <h2>Booking Details</h2>
+        <p><strong>Venue:</strong> {{venue.name.en}}</p>
+        <p><strong>Start Date:</strong> {{booking.startDate}}</p>
+        <p><strong>End Date:</strong> {{booking.endDate}}</p>
+        <p><strong>Start Time:</strong> {{booking.startTime}}</p>
+        <p><strong>End Time:</strong> {{booking.endTime}}</p>
+
+        {{#if booking.specialRequests}}
+            <h2>Special Requests</h2>
+            <p>{{booking.specialRequests}}</p>
+        {{/if}}
+
+        <p>If you have any questions or concerns, feel free to reach out to us.</p>
+    </div>
+    <div class="footer">
+        <p>This is an automated message. Please do not reply to this email.</p>
+    </div>
+</div>
+</body>
+</html>

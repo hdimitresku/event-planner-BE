@@ -2,6 +2,7 @@ import {Module} from '@nestjs/common';
 import {ConfigModule, ConfigService} from '@nestjs/config';
 import {TypeOrmModule} from '@nestjs/typeorm';
 import {BullModule} from '@nestjs/bull';
+import {ScheduleModule} from '@nestjs/schedule';
 import {AuthModule} from './auth/auth.module';
 import {UserModule} from './user/user.module';
 import {VenueModule} from './venue/venue.module';
@@ -14,6 +15,7 @@ import {ExternalReviewModule} from './external-review/external-review.module';
 import {AnalyticsModule} from './analytics/analytics.module';
 import {MessageModule} from './message/message.module';
 import {MediaModule} from './media/media.module';
+import {EmailModule} from './email/email.module';
 import {AutomapperModule} from "@automapper/nestjs";
 import {classes} from '@automapper/classes';
 import {ServeStaticModule} from "@nestjs/serve-static";
@@ -29,6 +31,7 @@ import { join } from 'path';
             isGlobal: true,
             envFilePath: '.env',
         }),
+        ScheduleModule.forRoot(),
         ServeStaticModule.forRoot({
             rootPath: join(__dirname, '..', 'uploads'),
             serveRoot: '/uploads',
@@ -48,7 +51,7 @@ import { join } from 'path';
                 password: configService.get('DB_PASSWORD', 'root'),
                 database: configService.get('DB_DATABASE', 'event_planner'),
                 entities: [__dirname + '/**/*.entity{.ts,.js}'],
-                synchronize: false,
+                synchronize: true,
                 logging: configService.get('NODE_ENV') !== 'production',
             }),
             inject: [ConfigService],
@@ -78,6 +81,7 @@ import { join } from 'path';
         AnalyticsModule,
         MessageModule,
         MediaModule,
+        EmailModule,
     ],
     controllers: [],
     providers: [],

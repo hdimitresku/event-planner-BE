@@ -23,6 +23,12 @@ export class UserService {
     return this.mapper.map(user, User, UserDto);
   }
 
+  async findById(userId: string): Promise<User | UserDto | undefined> {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) return undefined;
+    return this.mapper.map(user, User, UserDto);
+  }
+
   async findByEmail(email: string, includePassword = false): Promise<User | UserDto | undefined> {
     const user = await this.userRepository.findOne({ where: { email } });
     if (!user) return undefined;

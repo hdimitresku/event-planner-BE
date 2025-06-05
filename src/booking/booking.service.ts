@@ -1,6 +1,6 @@
-import {BadRequestException, ForbiddenException, Injectable, NotFoundException} from '@nestjs/common';
+import {BadRequestException, ForbiddenException, Injectable, NotFoundException, Logger} from '@nestjs/common';
 import {InjectRepository} from '@nestjs/typeorm';
-import {Between, In, Repository} from 'typeorm';
+import {Between, In, LessThan, Repository} from 'typeorm';
 import {Booking, BookingStatus} from './entities/booking.entity';
 import {CreateBookingDto} from './dto/create-booking.dto';
 import {UpdateBookingDto} from './dto/update-booking.dto';
@@ -9,6 +9,7 @@ import {VenueService} from '../venue/venue.service';
 import {Venue} from '@/venue/entities/venue.entity';
 import {ServiceOption} from '../service/entities/service-option.entity';
 import {ServiceService} from '@/service/service.service';
+import {NotificationService} from '../notification/notification.service';
 import {
     checkServiceDayAvailability,
     checkVenueDayAvailability
@@ -21,9 +22,13 @@ import {UserDto} from "@/user/dto/user.dto";
 import {ServiceDto} from "@/service/dto/service.dto";
 import {Service} from "@/service/entities/service.entity";
 import {ServiceWithBookingsDto} from "@/service/dto/service-with-bookings.dto";
+import {Cron} from '@nestjs/schedule';
+import {UserService} from "@/user/user.service";
 
 @Injectable()
 export class BookingService {
+    private readonly logger = new Logger(BookingService.name);
+    
     constructor(
         @InjectRepository(Booking)
         private readonly bookingRepository: Repository<Booking>,
@@ -31,12 +36,15 @@ export class BookingService {
         private readonly serviceOptionRepository: Repository<ServiceOption>,
         private readonly venueService: VenueService,
         private readonly serviceService: ServiceService,
+        private readonly notificationService: NotificationService,
+        private readonly userService: UserService,
         @InjectMapper() private readonly mapper: Mapper,
     ) {
     }
     
     async create(createBookingDto: CreateBookingDto, user: UserDto): Promise<BookingDto> {
         const venue = await this.venueService.findVenueEntity(createBookingDto.venueId);
+        const userEntity = await this.userService.findById(user.id);
         const userId = user.id;
 
         // Check day availability for the venue
@@ -68,7 +76,7 @@ export class BookingService {
                 where: {
                     id: In(createBookingDto.serviceOptionIds),
                 },
-                relations: ['service'],
+                relations: ['service', 'service.provider'],
             });
 
             if (serviceOptions.length === 0) {
@@ -108,17 +116,20 @@ export class BookingService {
             ...createBookingDto,
             userId: userId,
             venueId: venue.id,
-            user: user,
+            venue: venue,
+            user: userEntity,
             totalAmount,
             status: BookingStatus.PENDING,
             serviceOptions,
         });
 
+        // Send notifications
+        await this.notificationService.handleBookingCreation(booking);
+
         const savedBooking = await this.bookingRepository.save(booking);
 
         // Update availability for venue and services
         await this.updateAvailability(savedBooking);
-
         return this.mapper.map(savedBooking, Booking, BookingDto);
     }
 
@@ -386,21 +397,81 @@ export class BookingService {
 
     private async updateAvailability(booking: Booking): Promise<void> {
         // Update venue availability
-        await this.venueService.updateAvailability(
-            booking.venueId,
-            booking.startDate,
-            booking.endDate,
-            booking.status === BookingStatus.CONFIRMED,
-        );
+        const venue = await this.venueService.findOne(booking.venueId);
+        if (venue.metadata?.blockedDates) {
+            if (booking.status === BookingStatus.CANCELLED) {
+                // Remove this booking's dates from blocked dates
+                venue.metadata.blockedDates = venue.metadata.blockedDates.filter(
+                    blockedDate => 
+                        !(new Date(blockedDate.startDate).getTime() === new Date(booking.startDate).getTime() &&
+                          new Date(blockedDate.endDate).getTime() === new Date(booking.endDate).getTime())
+                );
+            } else {
+                // Add this booking's dates to blocked dates if not already present
+                const bookingDates = {
+                    startDate: booking.startDate,
+                    endDate: booking.endDate,
+                    bookingId: booking.id
+                };
+                
+                if (!venue.metadata.blockedDates.some(
+                    blockedDate => 
+                        new Date(blockedDate.startDate).getTime() === new Date(booking.startDate).getTime() &&
+                        new Date(blockedDate.endDate).getTime() === new Date(booking.endDate).getTime()
+                )) {
+                    venue.metadata.blockedDates.push(bookingDates);
+                }
+            }
+            await this.venueService.update(venue.id, { metadata: venue.metadata }, venue.owner.id);
+        }
 
         // Update service availability for each service option
         for (const option of booking.serviceOptions) {
-            await this.serviceService.updateAvailability(
-                option.service.id,
-                booking.startDate,
-                booking.endDate,
-                booking.status === BookingStatus.CONFIRMED,
-            );
+            const service = await this.serviceService.findOneEntity(option.service.id);
+            if (service.metadata?.blockedDates) {
+                if (booking.status === BookingStatus.CANCELLED) {
+                    // Remove this booking's dates from blocked dates
+                    service.metadata.blockedDates = service.metadata.blockedDates.filter(
+                        blockedDate => 
+                            !(new Date(blockedDate.startDate).getTime() === new Date(booking.startDate).getTime() &&
+                              new Date(blockedDate.endDate).getTime() === new Date(booking.endDate).getTime())
+                    );
+                } else {
+                    // Add this booking's dates to blocked dates if not already present
+                    const bookingDates = {
+                        startDate: booking.startDate,
+                        endDate: booking.endDate,
+                        bookingId: booking.id,
+                        serviceOptionId: option.id
+                    };
+                    
+                    if (!service.metadata.blockedDates.some(
+                        blockedDate => 
+                            new Date(blockedDate.startDate).getTime() === new Date(booking.startDate).getTime() &&
+                            new Date(blockedDate.endDate).getTime() === new Date(booking.endDate).getTime()
+                    )) {
+                        service.metadata.blockedDates.push(bookingDates);
+                    }
+                }
+                await this.serviceService.update(service.id, { metadata: service.metadata }, service.provider.id);
+            }
+        }
+
+        // Update booking metadata
+        if (booking.status === BookingStatus.CANCELLED) {
+            const existingOptions = booking.metadata?.options || [];
+            const updatedOptions = existingOptions.map(option => ({
+                ...option,
+                status: BookingStatus.CANCELLED,
+                rejectionReason: 'Automatically cancelled due to booking cancellation'
+            }));
+
+            booking.metadata = {
+                ...booking.metadata,
+                options: updatedOptions
+            };
+
+            await this.bookingRepository.save(booking);
         }
     }
 
@@ -425,11 +496,48 @@ export class BookingService {
 
         const oldStatus = booking.status;
         Object.assign(booking, updateStatusDto);
+
+        // If the venue is cancelling the booking, automatically cancel all service options
+        if (updateStatusDto.status === BookingStatus.CANCELLED) {
+            // Get existing options from metadata or initialize empty array
+            const existingOptions = booking.metadata?.options || [];
+            
+            // Process each service option
+            for (const option of booking.serviceOptions) {
+                // Skip if this service option has already been processed
+                if (existingOptions.some(existing => existing.id === option.id)) {
+                    continue;
+                }
+
+                // Add new option to the array with cancelled status
+                const newOption = {
+                    serviceId: option.service.id,
+                    id: option.id,
+                    status: BookingStatus.CANCELLED,
+                    rejectionReason: 'Automatically cancelled due to venue cancellation'
+                };
+
+                existingOptions.push(newOption);
+            }
+
+            // Update the booking metadata with all cancelled options
+            booking.metadata = {
+                ...booking.metadata,
+                options: existingOptions
+            };
+        }
+
         const updatedBooking = await this.bookingRepository.save(booking);
 
         // If status changed, update availability
         if (oldStatus !== updatedBooking.status) {
             await this.updateAvailability(updatedBooking);
+        }
+
+        // Send notifications
+        await this.notificationService.handleVenueStatusUpdate(updatedBooking);
+        if (updateStatusDto.status === BookingStatus.CANCELLED) {
+            await this.notificationService.handleServiceStatusUpdate(updatedBooking);
         }
 
         return this.mapper.map(updatedBooking, Booking, BookingDto);
@@ -513,6 +621,98 @@ export class BookingService {
             await this.updateAvailability(updatedBooking);
         }
 
+        // Send notifications
+        await this.notificationService.handleServiceStatusUpdate(updatedBooking);
+
         return this.mapper.map(updatedBooking, Booking, BookingDto);
+    }
+
+    @Cron('3 0 * * *') // Runs at 12:00 PM every day
+    async updateBookingStatuses() {
+        const now = new Date();
+        
+        // Update confirmed bookings that have ended to completed
+        await this.bookingRepository.update(
+            {
+                status: BookingStatus.CONFIRMED,
+                endDate: LessThan(now),
+            },
+            {
+                status: BookingStatus.COMPLETED,
+            },
+        );
+
+        // Update pending bookings that have ended to cancelled
+        await this.bookingRepository.update(
+            {
+                status: BookingStatus.PENDING,
+                endDate: LessThan(now),
+            },
+            {
+                status: BookingStatus.CANCELLED,
+            },
+        );
+    }
+
+    @Cron('25 0 * * *') // Runs at 12:00 PM every day
+    async updateServiceBookingStatuses() {
+        const now = new Date();
+        this.logger.log('Starting service booking status update cron job');
+
+        try {
+            // Find all bookings with service options that have ended
+            const bookings = await this.bookingRepository.find({
+                where: {
+                    endDate: LessThan(now),
+                    status: In([BookingStatus.PENDING, BookingStatus.CONFIRMED, BookingStatus.CANCELLED]),
+                },
+                relations: ['serviceOptions', 'serviceOptions.service'],
+            });
+
+            for (const booking of bookings) {
+                // Get existing options from metadata or initialize empty array
+                const existingOptions = booking.metadata?.options || [];
+                
+                // Process each service option
+                for (const option of booking.serviceOptions) {
+                    // Skip if this service option has already been processed
+                    if (existingOptions.some(existing => existing.id === option.id)) {
+                        continue;
+                    }
+
+                    // Add new option to the array with appropriate status
+                    const newOption = {
+                        serviceId: option.service.id,
+                        id: option.id,
+                        status: booking.status === BookingStatus.CONFIRMED ? 
+                            BookingStatus.COMPLETED : 
+                            BookingStatus.CANCELLED,
+                        rejectionReason: booking.status === BookingStatus.PENDING ? 
+                            'Automatically cancelled due to end date passing' : 
+                            undefined
+                    };
+
+                    booking.metadata = {
+                        ...booking.metadata,
+                        options: [...existingOptions, newOption]
+                    };
+
+                    // If the booking was pending, remove the service option and recalculate total
+                    if (booking.status === BookingStatus.PENDING || booking.status === BookingStatus.CANCELLED) {
+                        const newOptions = booking.serviceOptions.filter(opt => opt.id !== option.id);
+                        booking.totalAmount = await this.calculateTotalPrice(booking.venue, booking, newOptions);
+                    }
+                }
+
+                // Save the updated booking
+                await this.bookingRepository.save(booking);
+                this.logger.log(`Updated service booking statuses for booking ${booking.id}`);
+            }
+
+            this.logger.log('Completed service booking status update cron job');
+        } catch (error) {
+            this.logger.error(`Error in service booking status update cron job: ${error.message}`);
+            throw error;
+        }
     }
 } 

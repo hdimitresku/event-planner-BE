@@ -119,7 +119,7 @@ export class ServiceController {
     async update(
         @Param('id') id: string,
         @Body('data') data: string,
-        @Request() req,
+        @GetUser('id') userId: string,
         @UploadedFiles(
             new ParseFilePipe({
                 validators: [
@@ -131,14 +131,14 @@ export class ServiceController {
         ) files: Express.Multer.File[],
     ) {
         const updateServiceDto: UpdateServiceDto = JSON.parse(data);
-        const service = await this.serviceService.update(id, updateServiceDto, req.user);
+        const service = await this.serviceService.update(id, updateServiceDto, userId);
 
         // Process and save new images if any
         if (files?.length) {
             for (const file of files) {
                 await this.mediaService.processAndSaveImage(
                     file,
-                    req.user.userId,
+                    userId,
                     service.id,
                     MediaEntityType.SERVICE,
                 );

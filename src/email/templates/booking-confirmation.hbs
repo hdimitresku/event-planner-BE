@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Booking Confirmation</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f2f4f8;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+        .container {
+            max-width: 640px;
+            margin: 40px auto;
+            background: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+
+        .header {
+            background: #e6f0fc;
+            padding: 30px 20px;
+            text-align: center;
+        }
+
+        .header img {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 10px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            color: #0d47a1;
+        }
+
+        .content {
+            padding: 30px 20px;
+        }
+
+        .content h2 {
+            color: #0d47a1;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 18px;
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 5px;
+        }
+
+        .content p {
+            margin: 6px 0;
+        }
+
+        .footer {
+            font-size: 12px;
+            color: #777;
+            text-align: center;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-top: 1px solid #eee;
+        }
+
+        .total-amount {
+            font-weight: bold;
+            font-size: 16px;
+            color: #0d47a1;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <img src="cid:rezervoLogo" alt="Rezervo Ambientin Logo" />
+        <h1>Booking Confirmation</h1>
+    </div>
+    <div class="content">
+        <p>Dear {{user.firstName}},</p>
+
+        <p>Your booking has been confirmed. Here are the details:</p>
+
+        <h2>Venue Details</h2>
+        <p><strong>Venue:</strong> {{venue.name.en}}</p>
+        <p><strong>Address:</strong> {{venue.address.city}}</p>
+
+        <h2>Booking Details</h2>
+        <p><strong>Start Date:</strong> {{booking.startDate}}</p>
+        <p><strong>End Date:</strong> {{booking.endDate}}</p>
+        <p><strong>Start Time:</strong> {{booking.startTime}}</p>
+        <p><strong>End Time:</strong> {{booking.endTime}}</p>
+        <p><strong>Guests:</strong> {{booking.numberOfGuests}}</p>
+        <p class="total-amount">Total: ${{booking.totalAmount}}</p>
+
+        {{#if booking.specialRequests}}
+            <h2>Special Requests</h2>
+            <p>{{booking.specialRequests}}</p>
+        {{/if}}
+
+        <p>Thank you for choosing <strong>Rezervo Ambientin</strong>!</p>
+    </div>
+    <div class="footer">
+        <p>This is an automated message. Please do not reply.</p>
+    </div>
+</div>
+</body>
+</html>

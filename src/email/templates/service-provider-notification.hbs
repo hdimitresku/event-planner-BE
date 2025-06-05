@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>New Service Request</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f2f4f8;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+        .container {
+            max-width: 640px;
+            margin: 40px auto;
+            background: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+
+        .header {
+            background: #e6f0fc;
+            padding: 30px 20px;
+            text-align: center;
+        }
+
+        .header img {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 10px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            color: #0d47a1;
+        }
+
+        .content {
+            padding: 30px 20px;
+        }
+
+        .content h2 {
+            color: #0d47a1;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 18px;
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 5px;
+        }
+
+        .content p {
+            margin: 6px 0;
+        }
+
+        .footer {
+            font-size: 12px;
+            color: #777;
+            text-align: center;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-top: 1px solid #eee;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <img src="cid:rezervoLogo" alt="Rezervo Ambientin Logo" />
+        <h1>New Service Request</h1>
+    </div>
+    <div class="content">
+        <p>Dear {{serviceProvider.firstName}},</p>
+
+        <p>You have received a new service request for a booking.</p>
+
+        <h2>Booking Details</h2>
+        <p><strong>Venue:</strong> {{venue.name.en}}</p>
+        <p><strong>Date:</strong> {{booking.startDate}}</p>
+        <p><strong>Time:</strong> {{booking.startTime}} - {{booking.endTime}}</p>
+        <p><strong>Service:</strong> {{serviceOption.service.name.en}} - {{serviceOption.name.en}}</p>
+        <p><strong>Status:</strong> {{booking.status}}</p>
+
+        <p>Please review and update the service status accordingly.</p>
+    </div>
+    <div class="footer">
+        <p>This is an automated message. Please do not reply to this email.</p>
+    </div>
+</div>
+</body>
+</html>

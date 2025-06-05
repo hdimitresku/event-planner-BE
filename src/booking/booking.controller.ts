@@ -23,6 +23,7 @@ export class BookingController {
   constructor(private readonly bookingService: BookingService) {}
 
   @Post()
+  @UseGuards(JwtAuthGuard)
   create(@Body() createBookingDto: CreateBookingDto, @GetUser() user: UserDto) {
     return this.bookingService.create(createBookingDto, user);
   }

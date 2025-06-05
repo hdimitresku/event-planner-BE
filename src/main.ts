@@ -9,6 +9,8 @@ import * as path from 'path';
 const envPath = path.resolve(process.cwd(), '.env');
 dotenv.config({ path: envPath });
 console.log(process.env.JWT_SECRET);
+console.log(process.env.SMTP_USER);
+console.log(process.env.SMTP_PASSWORD);
 
 
 async function bootstrap() {

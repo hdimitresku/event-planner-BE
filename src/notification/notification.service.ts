@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {Injectable, NotFoundException, Logger, Inject} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Notification, NotificationType, NotificationPriority } from './notification.entity';
@@ -8,13 +8,20 @@ import { User } from '../user/entities/user.entity';
 import { InjectMapper } from '@automapper/nestjs';
 import { Mapper } from '@automapper/core';
 import { NotificationDto } from './dto/notification.dto';
+import { EmailService } from '../email/email.service';
+import { Booking, BookingStatus } from '../booking/entities/booking.entity';
+import { ServiceOption } from '../service/entities/service-option.entity';
 
 @Injectable()
 export class NotificationService {
+  private readonly logger = new Logger(NotificationService.name);
+
   constructor(
     @InjectRepository(Notification)
     private readonly notificationRepository: Repository<Notification>,
-    @InjectMapper() private readonly mapper: Mapper,
+    @InjectMapper()
+    private readonly mapper: Mapper,
+    private readonly emailService: EmailService
   ) {}
 
   private async findNotificationEntity(id: string, userId: string): Promise<Notification> {
@@ -123,6 +130,62 @@ export class NotificationService {
     const result = await this.notificationRepository.delete({ id, user: { id: user.id } });
     if (result.affected === 0) {
       throw new NotFoundException('Notification not found');
+    }
+  }
+
+  async handleBookingCreation(booking: Booking): Promise<void> {
+    try {
+      // Send confirmation to the user
+      await this.emailService.sendBookingConfirmationEmail(booking.user, booking);
+
+      // Notify venue owner
+      await this.emailService.sendVenueOwnerNotificationEmail(booking.venue.owner, booking);
+
+      // Notify service providers
+      for (const option of booking.serviceOptions) {
+        await this.emailService.sendServiceProviderNotificationEmail(
+          option.service.provider,
+          booking,
+          option
+        );
+      }
+    } catch (error) {
+      this.logger.error(`Failed to send booking creation notifications: ${error.message}`);
+      throw error;
+    }
+  }
+
+  async handleVenueStatusUpdate(booking: Booking): Promise<void> {
+    try {
+      // Send status update to the user
+      await this.emailService.sendVenueStatusUpdateEmail(booking.user, booking);
+    } catch (error) {
+      this.logger.error(`Failed to send venue status update notification: ${error.message}`);
+      throw error;
+    }
+  }
+
+  async handleServiceStatusUpdate(booking: Booking): Promise<void> {
+    try {
+      // Get cancelled services
+      const cancelledServices = booking.serviceOptions.filter(option => {
+        const serviceStatus = booking.metadata?.options?.find(
+          opt => opt.id === option.id
+        )?.status;
+        return serviceStatus === BookingStatus.CANCELLED;
+      });
+
+      // Only send service error email if there are cancelled services
+      if (cancelledServices.length > 0) {
+        await this.emailService.sendServiceErrorEmail(
+          booking.user,
+          cancelledServices,
+          booking
+        );
+      }
+    } catch (error) {
+      this.logger.error(`Failed to send service status update notification: ${error.message}`);
+      throw error;
     }
   }
 } 

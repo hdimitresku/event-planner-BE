@@ -121,9 +121,9 @@ export class ServiceService {
         return await this.findServiceEntity(id);
     }
 
-    async update(id: string, updateServiceDto: UpdateServiceDto, provider: User): Promise<ServiceDto> {
+    async update(id: string, updateServiceDto: UpdateServiceDto, providerId: string): Promise<ServiceDto> {
         const service = await this.findServiceEntity(id);
-        if (service.provider.id !== provider.id) {
+        if (service.provider.id !== providerId) {
             throw new ForbiddenException('You can only update your own services');
         }
         Object.assign(service, updateServiceDto);
