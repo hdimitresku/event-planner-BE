@@ -22,7 +22,7 @@ export class EmailService {
             attachments: [
                 {
                     filename: 'logo.png',
-                    path: 'uploads/logo.png',
+                    path: 'static/logo.png',
                     cid: 'rezervoLogo',
                 },
             ],
