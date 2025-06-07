@@ -136,7 +136,7 @@ export class BookingService {
     async findAll(userId: string): Promise<BookingDto[]> {
         const bookings = await this.bookingRepository.find({
             where: {userId},
-            relations: ['venue', 'user', 'serviceOptions', 'serviceOptions.service'],
+            relations: ['venue', 'venue.media', 'user', 'serviceOptions', 'serviceOptions.service'],
         });
 
         let bookingsDto = this.mapper.mapArray(bookings, Booking, BookingDto);
