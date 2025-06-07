@@ -3,6 +3,7 @@ import { MailerService } from '@nestjs-modules/mailer';
 import { User } from '../user/entities/user.entity';
 import { Booking } from '../booking/entities/booking.entity';
 import { ServiceOption } from '../service/entities/service-option.entity';
+import {join} from "path";
 
 @Injectable()
 export class EmailService {
@@ -22,7 +23,7 @@ export class EmailService {
             attachments: [
                 {
                     filename: 'logo.png',
-                    path: 'static/logo.png',
+                    path: join(__dirname, 'assets', 'logo.png'),
                     cid: 'rezervoLogo',
                 },
             ],
@@ -43,7 +44,7 @@ export class EmailService {
             attachments: [
                 {
                     filename: 'logo.png',
-                    path: 'static/logo.png',
+                    path: join(__dirname, 'assets', 'logo.png'),
                     cid: 'rezervoLogo',
                 },
             ],
@@ -63,7 +64,7 @@ export class EmailService {
             attachments: [
                 {
                     filename: 'logo.png',
-                    path: 'static/logo.png',
+                    path: join(__dirname, 'assets', 'logo.png'),
                     cid: 'rezervoLogo',
                 },
             ],
@@ -83,7 +84,7 @@ export class EmailService {
             attachments: [
                 {
                     filename: 'logo.png',
-                    path: 'static/logo.png',
+                    path: join(__dirname, 'assets', 'logo.png'),
                     cid: 'rezervoLogo',
                 },
             ],
@@ -104,7 +105,7 @@ export class EmailService {
             attachments: [
                 {
                     filename: 'logo.png',
-                    path: 'static/logo.png',
+                    path: join(__dirname, 'assets', 'logo.png'),
                     cid: 'rezervoLogo',
                 },
             ],
