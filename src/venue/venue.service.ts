@@ -1,6 +1,13 @@
-import {Injectable, NotFoundException, ForbiddenException, forwardRef, Inject} from '@nestjs/common';
+import {
+    Injectable,
+    NotFoundException,
+    ForbiddenException,
+    forwardRef,
+    Inject,
+    BadRequestException
+} from '@nestjs/common';
 import {InjectRepository} from '@nestjs/typeorm';
-import {Repository, Like, Between, In, LessThanOrEqual, MoreThanOrEqual} from 'typeorm';
+import {Repository, Like, Between, In, LessThanOrEqual, MoreThanOrEqual, Brackets} from 'typeorm';
 import {Venue} from './entities/venue.entity';
 import {CreateVenueDto} from './dto/create-venue.dto';
 import {UpdateVenueDto} from './dto/update-venue.dto';
@@ -12,6 +19,7 @@ import {Mapper} from '@automapper/core';
 import {MediaEntityType} from "@/media/entities/media.entity";
 import {ServiceType} from "@/shared/enums/service-type.enum";
 import {dayOrder} from "@/shared/interfaces/venue-capacity.interface";
+import {VenueOverviewDto} from "@/venue/dto/venue-overview.dto";
 
 @Injectable()
 export class VenueService {
@@ -33,84 +41,135 @@ export class VenueService {
         return this.mapper.map(savedVenue, Venue, VenueDto);
     }
 
-    async findAll(query: VenueQueryDto): Promise<VenueDto[]> {
+    async findAll(query: VenueQueryDto): Promise<VenueOverviewDto[]> {
+        console.log('Query Parameters:', JSON.stringify(query, null, 2)); // Detailed debug
+
         const queryBuilder = this.venueRepository
             .createQueryBuilder('venue')
-            .where('venue.isActive = :isActive', {isActive: true})
+            .where('venue.isActive = :isActive', { isActive: true })
             .leftJoinAndSelect(
                 'venue.media',
                 'media',
                 'media.venue_id::uuid = venue.id AND media.entityType = :entityType',
-                {entityType: MediaEntityType.VENUE},
+                { entityType: MediaEntityType.VENUE },
             )
-            .leftJoinAndSelect('venue.owner', 'owner')
-            .leftJoinAndSelect('venue.bookings', 'bookings')
             .leftJoinAndSelect('venue.reviews', 'reviews')
-            .orderBy('venue.createdAt', 'DESC')
-            .skip(((query.page || 1) - 1) * (query.limit || 10))
-            .take(query.limit || 10);
+            .orderBy('venue.createdAt', 'DESC');
 
-        // Location filter (address.city)
+        // Location filter
         if (query.location) {
-            queryBuilder.andWhere("venue.address->>'city' ILIKE :location", {
-                location: `%${query.location}%`,
-            });
+            console.log('Applying location filter:', query.location);
+            queryBuilder.andWhere(
+                new Brackets((qb) => {
+                    qb.where("venue.address->>'city' ILIKE :location")
+                        .orWhere("venue.address->>'state' ILIKE :location")
+                        .orWhere("venue.address->>'street' ILIKE :location")
+                        .orWhere("venue.address->>'country' ILIKE :location")
+                        .orWhere("venue.address->>'zipCode' ILIKE :location")
+                        .orWhere("venue.address->'location'->>'*' ILIKE :location"); // Search nested location object
+                }),
+                { location: `%${query.location}%` }
+            );
         }
 
         // Venue type filter
         if (query.venueTypes?.length) {
+            console.log('Applying venueTypes filter:', query.venueTypes);
             queryBuilder.andWhere('venue.type IN (:...venueTypes)', {
                 venueTypes: query.venueTypes,
             });
         } else if (query.type) {
-            queryBuilder.andWhere('venue.type = :type', {type: query.type});
+            console.log('Applying type filter:', query.type);
+            queryBuilder.andWhere('venue.type = :type', { type: query.type });
         }
 
-        // Max price filter (price.amount)
-        if (query.maxPrice !== undefined) {
+        // Max price filter
+        if (query.priceMax !== undefined) {
+            console.log('Applying priceMax filter:', query.priceMax);
             queryBuilder.andWhere("(venue.price->>'amount')::numeric <= :maxPrice", {
-                maxPrice: query.maxPrice,
+                maxPrice: query.priceMax,
             });
         }
 
-        // Price type filter (price.type)
+        if (query.priceMin !== undefined) {
+            console.log('Applying priceMax filter:', query.priceMin);
+            queryBuilder.andWhere("(venue.price->>'amount')::numeric >= :minPrice", {
+                minPrice: query.priceMin,
+            });
+        }
+
+        // Price type filter
         if (query.priceTypes?.length) {
+            console.log('Applying priceTypes filter:', query.priceTypes);
             queryBuilder.andWhere('venue.price->>\'type\' IN (:...priceTypes)', {
                 priceTypes: query.priceTypes,
             });
         } else if (query.priceType) {
+            console.log('Applying priceType filter:', query.priceType);
             queryBuilder.andWhere('venue.price->>\'type\' = :priceType', {
                 priceType: query.priceType,
             });
         }
 
-        // Guests filter (capacity.min and capacity.max)
+        // Guests filter
         if (query.guests) {
+            console.log('Applying guests filter:', query.guests);
             queryBuilder
-                .andWhere("(venue.capacity->>'min')::numeric <= :guests", {
-                    guests: query.guests,
-                })
-                .andWhere("(venue.capacity->>'max')::numeric >= :guests", {
-                    guests: query.guests,
-                });
+                .andWhere(
+                    `venue.capacity->>'min' IS NOT NULL 
+           AND (venue.capacity->>'min')::numeric <= :guests`,
+                    { guests: query.guests }
+                )
+                .andWhere(
+                    `venue.capacity->>'max' IS NOT NULL 
+           AND (venue.capacity->>'max')::numeric >= :guests`,
+                    { guests: query.guests }
+                );
         }
 
         // Amenities filter
         if (query.amenities?.length) {
+            console.log('Applying amenities filter:', query.amenities);
             queryBuilder.andWhere('venue.amenities @> :amenities', {
                 amenities: query.amenities,
             });
         }
 
-        // Search filter (name)
+        // Search filter
         if (query.search) {
+            console.log('Applying search filter:', query.search);
             queryBuilder.andWhere("venue.name->>'en' ILIKE :search", {
                 search: `%${query.search}%`,
             });
         }
 
+        // Date filter
+        if (query.date) {
+            console.log('Applying date filter:', query.date);
+            const parsedDate = new Date(query.date);
+            if (isNaN(parsedDate.getTime())) {
+                throw new BadRequestException('Invalid date format');
+            }
+            const dateString = parsedDate.toISOString().split('T')[0];
+            console.log('Parsed date string:', dateString);
+            queryBuilder.andWhere(
+                `(venue.metadata->>'blockedDates' IS NULL 
+          OR NOT EXISTS (
+            SELECT 1
+            FROM jsonb_array_elements(venue.metadata->'blockedDates') AS blockedDate
+            WHERE 
+              (blockedDate->>'startDate')::DATE <= :queryDate
+              AND (blockedDate->>'endDate')::DATE >= :queryDate
+          ))`,
+                { queryDate: dateString }
+            );
+        }
+
+        // Apply pagination at the end
+        queryBuilder.skip(((query.page || 1) - 1) * (query.limit || 10)).take(query.limit || 10);
+
         const venues = await queryBuilder.getMany();
-        return this.mapper.mapArray(venues, Venue, VenueDto);
+        return this.mapper.mapArray(venues, Venue, VenueOverviewDto);
     }
 
     async findByOwner(ownerId: string): Promise<VenueDto[]> {

@@ -11,6 +11,7 @@ import { ReviewDto } from '@/review/dto/review.dto';
 import { VenueDto } from './dto/venue.dto';
 import { Venue } from './entities/venue.entity';
 import { MediaItemDto } from '@/media/dto/media.dto';
+import { VenueOverviewDto } from './dto/venue-overview.dto';
 
 @Injectable()
 export class VenueProfile extends AutomapperProfile {
@@ -169,6 +170,107 @@ export class VenueProfile extends AutomapperProfile {
               mapFrom((src) => src.updatedAt)
           )
       );
+        createMap(
+            mapper,
+            Venue,
+            VenueOverviewDto,
+            forMember(
+                (dest) => dest.name,
+                mapFrom((src) => src.name),
+            ),
+            forMember(
+                (dest) => dest.type,
+                mapFrom((src) => src.type),
+            ),
+            forMember(
+                (dest) => dest.address,
+                mapFrom((src) => src.address),
+            ),
+            forMember(
+                (dest) => dest.metadata,
+                mapFrom((src) => src.metadata)
+            ),
+            forMember(
+                (dest) => dest.capacity,
+                mapFrom((src) => src.capacity),
+            ),
+            forMember(
+                (dest) => dest.price,
+                mapFrom((src) => src.price),
+            ),
+            forMember(
+                (dest) => dest.isActive,
+                mapFrom((src) => src.isActive),
+            ),
+            forMember(
+                (dest) => dest.metadata,
+                mapFrom((src) => src.metadata),
+            ),
+            forMember(
+                (dest) => dest.amenities,
+                mapFrom((src) => src.amenities || [])
+            ),
+            forMember(
+                (dest) => dest.media,
+                mapFrom((src) => this.mapper.mapArray(src.media || [], MediaItem, MediaItemDto))
+            ),
+            forMember(
+                (dest) => dest.reviews,
+                mapFrom((src) => this.mapper.mapArray(src.reviews || [], Review, ReviewDto))
+            ),
+        );
+
+        // Map VenueOverviewDto to Venue (reverse mapping)
+        createMap(
+            mapper,
+            VenueOverviewDto,
+            Venue,
+            forMember(
+                (dest) => dest.name,
+                mapFrom((src) => src.name),
+            ),
+            forMember(
+                (dest) => dest.type,
+                mapFrom((src) => src.type),
+            ),
+            forMember(
+                (dest) => dest.address,
+                mapFrom((src) => src.address),
+            ),
+            forMember(
+                (dest) => dest.capacity,
+                mapFrom((src) => src.capacity),
+            ),
+            forMember(
+                (dest) => dest.price,
+                mapFrom((src) => src.price),
+            ),
+            forMember(
+                (dest) => dest.metadata,
+                mapFrom((src) => src.metadata)
+            ),
+            forMember(
+                (dest) => dest.isActive,
+                mapFrom((src) => src.isActive),
+            ),
+            forMember(
+                (dest) => dest.metadata,
+                mapFrom((src) => src.metadata),
+            ),
+            forMember(
+                (dest) => dest.amenities,
+                mapFrom((src) => src.amenities || [])
+            ),
+            forMember(
+                (dest) => dest.media,
+                mapFrom((src) => this.mapper.mapArray(src.media || [], MediaItemDto, MediaItem))
+            ),
+            forMember(
+                (dest) => dest.reviews,
+                mapFrom((src) => this.mapper.mapArray(src.reviews || [], ReviewDto, Review))
+            ),
+        );
+
     };
   }
 }
