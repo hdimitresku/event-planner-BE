@@ -138,9 +138,12 @@ export class VenueService {
         // Search filter
         if (query.search) {
             console.log('Applying search filter:', query.search);
-            queryBuilder.andWhere("venue.name->>'en' ILIKE :search", {
-                search: `%${query.search}%`,
-            });
+            queryBuilder.andWhere(
+                "(venue.name->>'en' ILIKE :search OR venue.name->>'sq' ILIKE :search)",
+                {
+                    search: `%${query.search}%`,
+                }
+            );
         }
 
         // Date filter

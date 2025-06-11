@@ -69,58 +69,70 @@ function parseTimeRange(timeRange: string): { start: Date, end: Date } {
     try {
         const [startTime, endTime] = timeRange.split(' - ');
 
-        // Helper function to parse time
-        const parseTime = (time: string) => {
-            // Try different time formats
-            const formats = [
-                /(\d+):(\d+)\s*(AM|PM)/i,  // 9:00 AM
-                /(\d+)\s*(AM|PM)/i,        // 9 AM
-                /(\d+):(\d+)/              // 24h format
-            ];
+        return {
+            start: parseIndividualTime(startTime),
+            end: parseIndividualTime(endTime)
+        };
+    } catch (error) {
+        throw new BadRequestException(`Invalid time range format: ${timeRange}. Expected format: "9:00 AM - 10:00 PM" or "09:00 - 17:00"`);
+    }
+}
 
-            for (const format of formats) {
-                const match = time.trim().match(format);
-                if (match) {
-                    const [_, hour, minute = '0', period] = match;
-                    const date = new Date();
-                    let hours = parseInt(hour);
+function parseIndividualTime(time: string): Date {
+    // Try different time formats
+    const formats = [
+        /(\d+):(\d+)\s*(AM|PM)/i,  // 9:00 AM
+        /(\d+)\s*(AM|PM)/i,        // 9 AM
+        /(\d+):(\d+)/              // 24h format
+    ];
 
-                    if (period) {
-                        // Handle 12-hour format
-                        if (hours === 12) {
-                            // 12 AM becomes 24:00 (end of day), 12 PM becomes 12:00
-                            hours = period.toUpperCase() === 'AM' ? 24 : 12;
-                        } else {
-                            // For other hours, add 12 if PM
-                            hours = (hours % 12) + (period.toUpperCase() === 'PM' ? 12 : 0);
-                        }
-                    }
+    for (const format of formats) {
+        const match = time.trim().match(format);
+        if (match) {
+            const [_, hour, minute = '0', period] = match;
+            const date = new Date();
+            let hours = parseInt(hour);
 
-                    date.setHours(hours, parseInt(minute));
-                    return date;
+            if (period) {
+                // Handle 12-hour format
+                if (hours === 12) {
+                    // 12 AM becomes 0:00 (midnight), 12 PM becomes 12:00 (noon)
+                    hours = period.toUpperCase() === 'AM' ? 0 : 12;
+                } else {
+                    // For other hours, add 12 if PM
+                    hours = (hours % 12) + (period.toUpperCase() === 'PM' ? 12 : 0);
                 }
             }
 
-            throw new Error(`Invalid time format: ${time}`);
-        };
-
-        return {
-            start: parseTime(startTime),
-            end: parseTime(endTime)
-        };
-    } catch (error) {
-        throw new BadRequestException(`Invalid time range format: ${timeRange}. Expected format: "9:00 AM - 10:00 PM"`);
+            date.setHours(hours, parseInt(minute), 0, 0);
+            return date;
+        }
     }
+
+    throw new Error(`Invalid time format: ${time}`);
 }
 
 function isWithinTimeRange(requestedTime: string, allowedTimeRange: string): boolean {
     try {
         const { start: allowedStart, end: allowedEnd } = parseTimeRange(allowedTimeRange);
-        const requested = parseTimeRange(requestedTime + ' - ' + requestedTime).start;
+        const requested = parseIndividualTime(requestedTime);
 
-        return requested >= allowedStart && requested <= allowedEnd;
+        // Handle full day availability (e.g., "12:00 AM - 11:59 PM")
+        if (allowedStart.getHours() === 0 && allowedStart.getMinutes() === 0 && 
+            allowedEnd.getHours() === 23 && allowedEnd.getMinutes() === 59) {
+            return true; // Full day, any time is allowed
+        }
+
+        // Handle normal time ranges
+        if (allowedStart <= allowedEnd) {
+            // Normal range within the same day
+            return requested >= allowedStart && requested <= allowedEnd;
+        } else {
+            // Range crosses midnight
+            return requested >= allowedStart || requested <= allowedEnd;
+        }
     } catch (error) {
-        throw new BadRequestException(`Invalid time format: ${requestedTime}. Expected format: "9:00 AM"`);
+        throw new BadRequestException(`Invalid time format: ${requestedTime}. Expected format: "9:00 AM" or "09:00"`);
     }
 }
 
