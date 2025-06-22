@@ -10,6 +10,7 @@ import {extname} from 'path';
 import {MediaItemProfile} from "@/media/media.mapper";
 import {ServiceModule} from "@/service/service.module";
 import {VenueModule} from "@/venue/venue.module";
+import {MinioService} from '../shared/minio.service';
 
 @Module({
     imports: [
@@ -40,7 +41,7 @@ import {VenueModule} from "@/venue/venue.module";
             inject: [ConfigService],
         }),
     ],
-    providers: [MediaService, MediaItemProfile],
+    providers: [MediaService, MediaItemProfile, MinioService],
     controllers: [MediaController],
     exports: [MediaService],
 })

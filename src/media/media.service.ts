@@ -15,6 +15,7 @@ import {ServiceService} from "@/service/service.service";
 import {VenueService} from "@/venue/venue.service";
 import {ServiceDto} from "@/service/dto/service.dto";
 import {VenueDto} from "@/venue/dto/venue.dto";
+import { MinioService } from '../shared/minio.service';
 
 @Injectable()
 export class MediaService {
@@ -32,6 +33,7 @@ export class MediaService {
         @Inject(forwardRef(() => ConfigService))
         private readonly configService: ConfigService,
         @InjectMapper() private readonly mapper: Mapper,
+        private readonly minioService: MinioService,
     ) {
     }
 
@@ -56,85 +58,61 @@ export class MediaService {
             throw new BadRequestException(`File size exceeds maximum limit of ${this.maxFileSize / (1024 * 1024)}MB`);
         }
 
-        const uploadDir = this.configService.get('UPLOAD_DIR') || './uploads';
-
-        // Ensure upload directory exists
-        try {
-            await fs.mkdir(uploadDir, {recursive: true});
-        } catch (error) {
-            this.logger.error(`Error creating upload directory: ${error.message}`);
-            throw new BadRequestException('Failed to create upload directory');
-        }
-
+        // Remove uploadDir and fs.mkdir logic
         const processedFilename = `processed-${Date.now()}-${file.originalname.replace(/[^a-zA-Z0-9.]/g, '_')}`;
-        const processedPath = path.join(uploadDir, processedFilename);
+        // Process image with sharp directly from buffer
+        const image = sharp(file.buffer);
+        const metadata = await image.metadata();
 
-        try {
-            // Process image with sharp directly from buffer
-            const image = sharp(file.buffer);
-            const metadata = await image.metadata();
-
-            if (!metadata.width || !metadata.height) {
-                throw new BadRequestException('Invalid image file');
-            }
-
-            // Process and save image
-            await image
-                .resize(1200, 1200, {
-                    fit: 'inside',
-                    withoutEnlargement: true,
-                })
-                .jpeg({quality: 80})
-                .toFile(processedPath);
-
-            // Create media record
-            let venue: Venue | null = null;
-            let service: Service = null;
-            if (entityType === MediaEntityType.VENUE) {
-                venue = await this.venueService.findOneEntity(entityId);
-                if (!venue) {
-                    throw new Error(`Venue with ID ${entityId} not found`);
-                }
-            } else if (entityType === MediaEntityType.SERVICE) {
-                service = await this.serviceService.findOneEntity(entityId);
-                if (!service) {
-                    throw new Error(`Service with ID ${entityId} not found`);
-                }
-            }
-
-            // Create media record
-            const media = this.mediaRepository.create({
-                url: processedPath,
-                type: MediaType.IMAGE,
-                description: {
-                    en: file.originalname,
-                    sq: file.originalname,
-                },
-                entityType,
-                entityId,
-                venue: entityType === MediaEntityType.VENUE ? venue : undefined,
-                service: entityType === MediaEntityType.SERVICE ? service : undefined,
-            });
-
-
-            const savedMedia = await this.mediaRepository.save(media);
-            return this.mapper.map(savedMedia, MediaItem, MediaItemDto);
-        } catch (error) {
-            this.logger.error(`Error processing image: ${error.message}`);
-
-            // Clean up processed file if it exists
-            try {
-                if (processedPath) await fs.unlink(processedPath);
-            } catch (cleanupError) {
-                this.logger.error(`Error cleaning up files: ${cleanupError.message}`);
-            }
-
-            if (error instanceof BadRequestException) {
-                throw error;
-            }
-
-            throw new BadRequestException('Failed to process image file');
+        if (!metadata.width || !metadata.height) {
+            throw new BadRequestException('Invalid image file');
         }
+
+        // Process image to buffer
+        const processedBuffer = await image
+            .resize(1200, 1200, {
+                fit: 'inside',
+                withoutEnlargement: true,
+            })
+            .jpeg({ quality: 80 })
+            .toBuffer();
+
+        // Upload to MinIO
+        const bucket = 'media';
+        await this.minioService.uploadFile(bucket, processedFilename, processedBuffer, { 'Content-Type': 'image/jpeg' });
+        const minioUrl = `uploads/${processedFilename}`;
+
+        // Create media record
+        let venue: Venue | null = null;
+        let service: Service = null;
+        if (entityType === MediaEntityType.VENUE) {
+            venue = await this.venueService.findOneEntity(entityId);
+            if (!venue) {
+                throw new Error(`Venue with ID ${entityId} not found`);
+            }
+        } else if (entityType === MediaEntityType.SERVICE) {
+            service = await this.serviceService.findOneEntity(entityId);
+            if (!service) {
+                throw new Error(`Service with ID ${entityId} not found`);
+            }
+        }
+
+        // Create media record
+        const media = this.mediaRepository.create({
+            url: minioUrl,
+            type: MediaType.IMAGE,
+            description: {
+                en: file.originalname,
+                sq: file.originalname,
+            },
+            entityType,
+            entityId,
+            venue: entityType === MediaEntityType.VENUE ? venue : undefined,
+            service: entityType === MediaEntityType.SERVICE ? service : undefined,
+        });
+
+        const savedMedia = await this.mediaRepository.save(media);
+        return this.mapper.map(savedMedia, MediaItem, MediaItemDto);
     }
 
     async getMediaById(id: string): Promise<MediaItemDto> {

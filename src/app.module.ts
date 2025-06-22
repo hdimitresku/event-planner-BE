@@ -18,8 +18,6 @@ import {MediaModule} from './media/media.module';
 import {EmailModule} from './email/email.module';
 import {AutomapperModule} from "@automapper/nestjs";
 import {classes} from '@automapper/classes';
-import {ServeStaticModule} from "@nestjs/serve-static";
-import { join } from 'path';
 
 
 // TODO: Import AuthModule, UserModule, VenueModule, etc. here as we build them
@@ -32,10 +30,6 @@ import { join } from 'path';
             envFilePath: '.env',
         }),
         ScheduleModule.forRoot(),
-        ServeStaticModule.forRoot({
-            rootPath: join(__dirname, '..', 'uploads'),
-            serveRoot: '/uploads',
-        }),
         AutomapperModule.forRoot({
             strategyInitializer: classes(),
         }),

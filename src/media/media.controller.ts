@@ -8,6 +8,7 @@ import {
   UseInterceptors,
   UploadedFile,
   Query,
+  Res,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { MediaService } from './media.service';
@@ -15,12 +16,16 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ApiTags, ApiOperation, ApiResponse, ApiConsumes } from '@nestjs/swagger';
 import { User } from '../user/entities/user.entity';
 import { GetUser } from '../auth/decorators/get-user.decorator';
+import { Response } from 'express';
+import { MinioService } from '../shared/minio.service';
 
 @ApiTags('media')
 @Controller('media')
-@UseGuards(JwtAuthGuard)
 export class MediaController {
-  constructor(private readonly mediaService: MediaService) {}
+  constructor(
+    private readonly mediaService: MediaService,
+    private readonly minioService: MinioService,
+  ) {}
 
   @Post('upload')
   @ApiOperation({ summary: 'Upload a media file' })
@@ -54,5 +59,17 @@ export class MediaController {
   @ApiResponse({ status: 200, description: 'File deleted successfully' })
   async deleteMedia(@Param('id') id: string) {
     return this.mediaService.deleteMedia(id);
+  }
+
+  @Get('/uploads/:imgName')
+  async serveImage(@Param('imgName') imgName: string, @Res() res: Response) {
+    const bucket = 'media';
+    try {
+      const stream = await this.minioService.getFileStream(bucket, imgName);
+      res.setHeader('Content-Type', 'image/jpeg');
+      stream.pipe(res);
+    } catch (err) {
+      res.status(404).send('Image not found');
+    }
   }
 } 
