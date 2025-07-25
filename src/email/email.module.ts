@@ -20,7 +20,7 @@ import { join } from 'path';
                     },
                 },
                 defaults: {
-                    from: '"Event Space" <noreply@eventspace.com>',
+                    from: configService.get('SMTP_FROM_EMAIL') || 'info@rezervoambientin.com',
                 },
                 template: {
                     dir: join(__dirname, 'templates'),
